@@ -145,7 +145,7 @@ jobs:
     name: Inject + repack IPA
     needs: [prep, tweaks]
     if: github.actor == 'eutudb23'
-    runs-on: macos-14
+    runs-on: macos-latest
     steps:
       - name: Mask sensitive inputs
         uses: levibostian/action-hide-sensitive-inputs@1.2.0
@@ -215,7 +215,7 @@ jobs:
     name: TrollFools companion (.cyan + dylib zip)
     if: ${{ inputs.build_trollfools_companion && github.actor == 'eutudb23' }}
     needs: [prep, tweaks]
-    runs-on: macos-14
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v6
 

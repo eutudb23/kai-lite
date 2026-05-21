@@ -47,7 +47,7 @@ file "$SRC_IPA" | grep -qiE 'zip archive|ios app' || {
 declare -a DEB_ARGS=()
 while IFS= read -r name; do
   [[ -z "$name" ]] && continue
-  matches=( "$DEB_DIR"/${name}*.deb "$DEB_DIR"/${name}*.appex )
+  matches=( "$DEB_DIR"/${name}*.deb "$DEB_DIR"/${name}*.appex "$DEB_DIR"/${name}*.dylib )
   # Filter out non-existent glob expansions.
   real=()
   for m in "${matches[@]}"; do [[ -e "$m" ]] && real+=( "$m" ); done
