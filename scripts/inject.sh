@@ -43,18 +43,24 @@ file "$SRC_IPA" | grep -qiE 'zip archive|ios app' || {
   echo "::error::Downloaded file is not a zip/IPA"; file "$SRC_IPA"; exit 1
 }
 
-# 2. Resolve selected .deb paths.
+# 2. Resolve selected artifacts. build_all_tweaks.sh renames every output to
+#    <Name>.<ext> so we can match by exact name across .deb / .dylib / .appex.
 declare -a DEB_ARGS=()
 while IFS= read -r name; do
   [[ -z "$name" ]] && continue
-  matches=( "$DEB_DIR"/${name}*.deb "$DEB_DIR"/${name}*.appex "$DEB_DIR"/${name}*.dylib )
-  # Filter out non-existent glob expansions.
-  real=()
-  for m in "${matches[@]}"; do [[ -e "$m" ]] && real+=( "$m" ); done
-  if (( ${#real[@]} == 0 )); then
-    echo "::error::Nothing in $DEB_DIR matching '${name}*' (.deb or .appex)"; ls "$DEB_DIR"; exit 1
+  hit=""
+  for ext in deb dylib appex bundle; do
+    if [[ -e "$DEB_DIR/${name}.${ext}" ]]; then
+      hit="$DEB_DIR/${name}.${ext}"
+      break
+    fi
+  done
+  if [[ -z "$hit" ]]; then
+    echo "::error::No artifact at $DEB_DIR/${name}.{deb,dylib,appex,bundle}"
+    ls "$DEB_DIR"
+    exit 1
   fi
-  DEB_ARGS+=( "${real[0]}" )
+  DEB_ARGS+=( "$hit" )
 done <<<"$ENABLED_TWEAKS"
 
 if (( ${#DEB_ARGS[@]} == 0 )); then

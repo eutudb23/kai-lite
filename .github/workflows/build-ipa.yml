@@ -103,27 +103,26 @@ jobs:
           ENABLE_YTSIDELOAD:              ${{ inputs.enable_ytsideload }}
           ENABLE_SAFARI_EXTENSION:        ${{ inputs.enable_safari_extension }}
         run: |
-          # Pairs: <tweaks.json name>:<.deb basename prefix used by inject.sh>
-          PAIRS=()
-          [[ "$ENABLE_YTVIDEOOVERLAY"          == "true" ]] && PAIRS+=("YTVideoOverlay:ytvideooverlay")
-          [[ "$ENABLE_YOUTUBE_X"               == "true" ]] && PAIRS+=("YouTube-X:youtubex")
-          [[ "$ENABLE_YOUPIP"                  == "true" ]] && PAIRS+=("YouPiP:youpip")
-          [[ "$ENABLE_YTUHD"                   == "true" ]] && PAIRS+=("YTUHD:ytuhd")
-          [[ "$ENABLE_YOUQUALITY"              == "true" ]] && PAIRS+=("YouQuality:youquality")
-          [[ "$ENABLE_RETURN_YOUTUBE_DISLIKES" == "true" ]] && PAIRS+=("Return-YouTube-Dislikes:ryd")
+          # Single source of truth: tweaks.json names. build_all_tweaks.sh renames
+          # every output to <Name>.<ext>, so the same name is used as build filter,
+          # inject resolver, and human-readable label.
+          NAMES=()
+          [[ "$ENABLE_YTVIDEOOVERLAY"          == "true" ]] && NAMES+=("YTVideoOverlay")
+          [[ "$ENABLE_YOUTUBE_X"               == "true" ]] && NAMES+=("YouTube-X")
+          [[ "$ENABLE_YOUPIP"                  == "true" ]] && NAMES+=("YouPiP")
+          [[ "$ENABLE_YTUHD"                   == "true" ]] && NAMES+=("YTUHD")
+          [[ "$ENABLE_YOUQUALITY"              == "true" ]] && NAMES+=("YouQuality")
+          [[ "$ENABLE_RETURN_YOUTUBE_DISLIKES" == "true" ]] && NAMES+=("Return-YouTube-Dislikes")
           if [[ "$ENABLE_YTABCONFIG" == "true" ]]; then
-            PAIRS+=("YouGroupSettings:yougroupsettings")   # silent runtime dep
-            PAIRS+=("YTABConfig:ytabconfig")
+            NAMES+=("YouGroupSettings")   # silent runtime dep of YTABConfig
+            NAMES+=("YTABConfig")
           fi
-          [[ "$ENABLE_DONTEATMYCONTENT"        == "true" ]] && PAIRS+=("DontEatMyContent:donteatmycontent")
-          [[ "$ENABLE_YTSIDELOAD"              == "true" ]] && PAIRS+=("YTSideload:ytsideload")
-          [[ "$ENABLE_SAFARI_EXTENSION"        == "true" ]] && PAIRS+=("OpenYouTubeSafariExtension:OpenYouTubeSafariExtension")
-
-          NAMES=(); BASES=()
-          for p in "${PAIRS[@]}"; do NAMES+=("${p%%:*}"); BASES+=("${p##*:}"); done
+          [[ "$ENABLE_DONTEATMYCONTENT"        == "true" ]] && NAMES+=("DontEatMyContent")
+          [[ "$ENABLE_YTSIDELOAD"              == "true" ]] && NAMES+=("YTSideload")
+          [[ "$ENABLE_SAFARI_EXTENSION"        == "true" ]] && NAMES+=("OpenYouTubeSafariExtension")
 
           JSON=$(printf '%s\n' "${NAMES[@]}" | jq -R . | jq -sc .)
-          NL=$(printf '%s\n' "${BASES[@]}")
+          NL=$(printf '%s\n' "${NAMES[@]}")
           PRETTY=$(printf '  - %s\n' "${NAMES[@]}")
 
           {
@@ -241,13 +240,14 @@ jobs:
         env:
           ENABLED_TWEAKS: ${{ needs.prep.outputs.newline }}
         run: |
-          # cgen accepts .deb, .dylib, .appex, .bundle, .framework.
+          # build_all_tweaks.sh emits <Name>.<ext> exactly — match by name, not glob.
           INJECTS=()
           while IFS= read -r name; do
             [[ -z "$name" ]] && continue
-            for ext in deb appex dylib; do
-              f=$(ls built-debs/${name}*.${ext} 2>/dev/null | head -1)
-              [[ -n "$f" ]] && { INJECTS+=("$f"); break; }
+            for ext in deb dylib appex bundle; do
+              if [[ -e "built-debs/${name}.${ext}" ]]; then
+                INJECTS+=("built-debs/${name}.${ext}"); break
+              fi
             done
           done <<<"$ENABLED_TWEAKS"
           echo "Including in .cyan: ${INJECTS[*]}"
@@ -269,9 +269,8 @@ jobs:
           STAGE=$(mktemp -d)
           while IFS= read -r name; do
             [[ -z "$name" ]] && continue
-            # Try .deb first (most cases); if absent, copy the raw .dylib/.appex/.bundle.
-            deb=$(ls built-debs/${name}*.deb 2>/dev/null | head -1)
-            if [[ -n "$deb" ]]; then
+            deb="built-debs/${name}.deb"
+            if [[ -f "$deb" ]]; then
               tmp=$(mktemp -d)
               dpkg-deb -x "$deb" "$tmp"
               find "$tmp" \( -name '*.dylib' -o -name '*.bundle' -o -name '*.framework' \) \
@@ -279,8 +278,9 @@ jobs:
               rm -rf "$tmp"
             else
               for ext in dylib appex bundle; do
-                f=$(ls built-debs/${name}*.${ext} 2>/dev/null | head -1)
-                [[ -n "$f" ]] && { cp -R "$f" "$STAGE/"; break; }
+                if [[ -e "built-debs/${name}.${ext}" ]]; then
+                  cp -R "built-debs/${name}.${ext}" "$STAGE/"; break
+                fi
               done
             fi
           done <<<"$ENABLED_TWEAKS"

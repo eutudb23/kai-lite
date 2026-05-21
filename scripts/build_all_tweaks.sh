@@ -52,7 +52,14 @@ jq -c "$filter_expr" "$MANIFEST" | while read -r entry; do
   if [[ -n "$release" ]]; then
     pattern=$(jq -r '.asset_pattern' <<<"$entry")
     echo "::group::Download release $name ($release :: $pattern)"
-    gh release download --repo "$release" --pattern "$pattern" --dir "$OUT_DIR" --clobber
+    tmp=$(mktemp -d)
+    gh release download --repo "$release" --pattern "$pattern" --dir "$tmp" --clobber
+
+    asset=$(find "$tmp" -type f | sort | head -1)
+    [[ -z "$asset" ]] && { echo "::error::No asset matched '$pattern'"; exit 1; }
+    ext="${asset##*.}"
+    cp "$asset" "$OUT_DIR/${name}.${ext}"
+    rm -rf "$tmp"
     echo "::endgroup::"
     continue
   fi
@@ -70,7 +77,9 @@ jq -c "$filter_expr" "$MANIFEST" | while read -r entry; do
     if [[ -z "$found" ]]; then
       echo "::error::Sparse checkout of '$sparse' produced nothing in $sparse_dir"; exit 1
     fi
-    cp -R "$found" "$OUT_DIR/"
+    ext="${found##*.}"
+    rm -rf "$OUT_DIR/${name}.${ext}"
+    cp -R "$found" "$OUT_DIR/${name}.${ext}"
     echo "::endgroup::"
     continue
   fi
@@ -101,7 +110,7 @@ jq -c "$filter_expr" "$MANIFEST" | while read -r entry; do
   if (( ${#found[@]} == 0 )); then
     echo "::error::No .deb produced for $name (glob=$glob)"; exit 1
   fi
-  cp "${found[@]}" "$OUT_DIR/"
+  cp "${found[0]}" "$OUT_DIR/${name}.deb"
   popd >/dev/null
   echo "::endgroup::"
 done
