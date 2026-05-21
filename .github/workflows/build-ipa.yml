@@ -86,7 +86,7 @@ jobs:
       pretty: ${{ steps.compute.outputs.pretty }}
     steps:
       - name: Mask sensitive inputs
-        uses: levibostian/action-hide-sensitive-inputs@v2
+        uses: levibostian/action-hide-sensitive-inputs@1.2.0
 
       - id: compute
         env:
@@ -146,7 +146,7 @@ jobs:
     runs-on: macos-14
     steps:
       - name: Mask sensitive inputs
-        uses: levibostian/action-hide-sensitive-inputs@v2
+        uses: levibostian/action-hide-sensitive-inputs@1.2.0
 
       - uses: actions/checkout@v4
 
