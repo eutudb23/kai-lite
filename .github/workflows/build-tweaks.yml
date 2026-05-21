@@ -38,12 +38,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Write filter to file (for cache-key hashing)
+        env:
+          FILTER: ${{ inputs.enabled_tweaks_json }}
+        run: printf '%s' "${FILTER:-all}" > .cache-filter.txt
+
       - name: Cache built .deb files
         id: cache-debs
         uses: actions/cache@v5
         with:
           path: built-debs
-          key: debs-${{ runner.os }}-${{ hashFiles('tweaks.json') }}-${{ inputs.enabled_tweaks_json }}
+          # hashFiles digests both files — comma-free, stable, length-bounded.
+          key: debs-${{ runner.os }}-${{ hashFiles('tweaks.json', '.cache-filter.txt') }}
 
       - name: Install build tools
         if: steps.cache-debs.outputs.cache-hit != 'true'
