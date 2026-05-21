@@ -87,6 +87,8 @@ jobs:
     steps:
       - name: Mask sensitive inputs
         uses: levibostian/action-hide-sensitive-inputs@1.2.0
+        with:
+          exclude_inputs: bundle_id,app_name,publish_release,build_trollfools_companion,enable_safari_extension,enable_youtube_x,enable_youpip,enable_ytuhd,enable_youquality,enable_return_youtube_dislikes,enable_ytabconfig,enable_ytvideooverlay,enable_donteatmycontent,enable_ytsideload
 
       - id: compute
         env:
@@ -147,15 +149,17 @@ jobs:
     steps:
       - name: Mask sensitive inputs
         uses: levibostian/action-hide-sensitive-inputs@1.2.0
+        with:
+          exclude_inputs: bundle_id,app_name,publish_release,build_trollfools_companion,enable_safari_extension,enable_youtube_x,enable_youpip,enable_ytuhd,enable_youquality,enable_return_youtube_dislikes,enable_ytabconfig,enable_ytvideooverlay,enable_donteatmycontent,enable_ytsideload
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: built-debs
           path: built-debs
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -200,7 +204,7 @@ jobs:
             echo "$ENABLED_PRETTY"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: Tweaked-ipa-${{ github.run_number }}
           path: Tweaked_${{ github.run_number }}.ipa
@@ -213,16 +217,16 @@ jobs:
     needs: [prep, tweaks]
     runs-on: macos-14
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: built-debs
           path: built-debs
 
       - run: brew install dpkg
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -269,7 +273,7 @@ jobs:
           ( cd "$STAGE" && zip -r "$GITHUB_WORKSPACE/Tweaked_${{ github.run_number }}-dylibs.zip" . )
           ls -lh "Tweaked_${{ github.run_number }}-dylibs.zip"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: Tweaked-trollfools-${{ github.run_number }}
           path: |
@@ -284,7 +288,7 @@ jobs:
     needs: [inject, trollfools]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: Tweaked-*-${{ github.run_number }}
           merge-multiple: true

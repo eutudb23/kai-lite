@@ -31,16 +31,16 @@ jobs:
     runs-on: macos-14
     env:
       THEOS: /opt/theos
-      THEOS_COMMIT: 9bc73406ef4ddb208314c2b53c0f6fe6f5b15ce4
+      THEOS_COMMIT: 9bc73406cf80b711ef4d02c15ff1dedc4478a275
       IOS_SDK_URL: https://github.com/theos/sdks/archive/refs/heads/master.zip
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Cache built .deb files
         id: cache-debs
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: built-debs
           key: debs-${{ runner.os }}-${{ hashFiles('tweaks.json') }}-${{ inputs.enabled_tweaks_json }}
@@ -48,8 +48,9 @@ jobs:
       - name: Install build tools
         if: steps.cache-debs.outputs.cache-hit != 'true'
         run: |
+          # macos-14 preinstalls make, jq, gh, xz, coreutils — only need ldid + dpkg.
           brew update
-          brew install ldid dpkg make jq gh xz coreutils
+          brew install ldid dpkg
 
       - name: Install Theos
         if: steps.cache-debs.outputs.cache-hit != 'true'
@@ -75,7 +76,7 @@ jobs:
         run: ls -lh built-debs/ || echo "no debs (empty filter?)"
 
       - name: Upload built-debs artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: built-debs
           path: |
