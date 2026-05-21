@@ -166,7 +166,8 @@ jobs:
       - name: Install cyan (pyzule-rw)
         run: |
           python -m pip install --upgrade pip pipx
-          pipx install cyan-rw
+          # Install pyzule-rw (cyan) straight from GitHub — not published to PyPI.
+          pipx install --force https://github.com/asdfzxcvbn/pyzule-rw/archive/main.zip
           cyan --help | head -5
 
       - name: Inject + repack
@@ -233,28 +234,34 @@ jobs:
       - name: Install cyan (provides cgen)
         run: |
           python -m pip install --upgrade pip pipx
-          pipx install cyan-rw
+          # Install pyzule-rw (cyan) straight from GitHub — not published to PyPI.
+          pipx install --force https://github.com/asdfzxcvbn/pyzule-rw/archive/main.zip
 
-      - name: Generate .cyan package
+      - name: Generate .cyan re-injection bundle
         env:
           ENABLED_TWEAKS: ${{ needs.prep.outputs.newline }}
         run: |
-          DEBS=()
+          # cgen accepts .deb, .dylib, .appex, .bundle, .framework.
+          INJECTS=()
           while IFS= read -r name; do
             [[ -z "$name" ]] && continue
-            d=$(ls built-debs/${name}*.deb 2>/dev/null | head -1)
-            [[ -n "$d" ]] && DEBS+=("$d")
+            for ext in deb appex dylib; do
+              f=$(ls built-debs/${name}*.${ext} 2>/dev/null | head -1)
+              [[ -n "$f" ]] && { INJECTS+=("$f"); break; }
+            done
           done <<<"$ENABLED_TWEAKS"
-          echo "Including in .cyan: ${DEBS[*]}"
-          # Prefer cgen if available; otherwise cyan --cyan mode.
-          if command -v cgen >/dev/null; then
-            cgen -o "Tweaked_${{ github.run_number }}.cyan" -i "${DEBS[@]}" \
-              -b "${{ inputs.bundle_id }}" -n "${{ inputs.app_name }}" -uwef
-          else
-            cyan --cyan -o "Tweaked_${{ github.run_number }}.cyan" -f "${DEBS[@]}"
-          fi
+          echo "Including in .cyan: ${INJECTS[*]}"
+          # cgen: -o output, -f file list, -b bundle id, -n display name,
+          # -u remove UISupportedDevices, -w remove watch apps, -e remove extensions.
+          # No `-i` (that's cyan's IPA input). No combined `-uwef` (that bundles -f).
+          cgen \
+            -o "Tweaked_${{ github.run_number }}.cyan" \
+            -b "${{ inputs.bundle_id }}" \
+            -n "${{ inputs.app_name }}" \
+            -u -w -e \
+            -f "${INJECTS[@]}"
 
-      - name: Extract dylibs/bundles for TrollFools zip
+      - name: Extract injectables for TrollFools zip
         env:
           ENABLED_TWEAKS: ${{ needs.prep.outputs.newline }}
         run: |
@@ -262,14 +269,22 @@ jobs:
           STAGE=$(mktemp -d)
           while IFS= read -r name; do
             [[ -z "$name" ]] && continue
-            deb=$(ls built-debs/${name}*.deb 2>/dev/null | head -1) || continue
-            [[ -z "$deb" ]] && continue
-            tmp=$(mktemp -d)
-            dpkg-deb -x "$deb" "$tmp"
-            find "$tmp" \( -name '*.dylib' -o -name '*.bundle' -o -name '*.framework' \) \
-              -exec cp -R {} "$STAGE/" \;
-            rm -rf "$tmp"
+            # Try .deb first (most cases); if absent, copy the raw .dylib/.appex/.bundle.
+            deb=$(ls built-debs/${name}*.deb 2>/dev/null | head -1)
+            if [[ -n "$deb" ]]; then
+              tmp=$(mktemp -d)
+              dpkg-deb -x "$deb" "$tmp"
+              find "$tmp" \( -name '*.dylib' -o -name '*.bundle' -o -name '*.framework' \) \
+                -exec cp -R {} "$STAGE/" \;
+              rm -rf "$tmp"
+            else
+              for ext in dylib appex bundle; do
+                f=$(ls built-debs/${name}*.${ext} 2>/dev/null | head -1)
+                [[ -n "$f" ]] && { cp -R "$f" "$STAGE/"; break; }
+              done
+            fi
           done <<<"$ENABLED_TWEAKS"
+          ls -lR "$STAGE"
           ( cd "$STAGE" && zip -r "$GITHUB_WORKSPACE/Tweaked_${{ github.run_number }}-dylibs.zip" . )
           ls -lh "Tweaked_${{ github.run_number }}-dylibs.zip"
 
