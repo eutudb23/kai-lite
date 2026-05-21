@@ -48,7 +48,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: built-debs
-          key: debs-${{ runner.os }}-${{ hashFiles('tweaks.json', '.cache-filter.txt') }}
+          key: debs-${{ runner.os }}-${{ hashFiles('tweaks.json', '.cache-filter.txt', 'scripts/build_all_tweaks.sh') }}
 
       - name: Install build tools
         if: steps.cache-debs.outputs.cache-hit != 'true'
