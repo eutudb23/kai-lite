@@ -12,7 +12,8 @@
     { "name": "Return-YouTube-Dislikes", "repo": "PoomSmart/Return-YouTube-Dislikes", "ref": "main", "deb_glob": "packages/*.deb" },
     { "name": "YouGroupSettings",        "repo": "PoomSmart/YouGroupSettings",        "ref": "main", "deb_glob": "packages/*.deb" },
     { "name": "YTABConfig",              "repo": "PoomSmart/YTABConfig",              "ref": "main", "deb_glob": "packages/*.deb" },
-    { "name": "DontEatMyContent",        "repo": "therealFoxster/DontEatMyContent",   "ref": "main", "deb_glob": "packages/*.deb" },
-    { "name": "YTSideload",              "release": "Balackburn/YTSideload",          "asset_pattern": "*rootless*.deb" }
+    { "name": "DontEatMyContent",            "repo": "therealFoxster/DontEatMyContent",   "ref": "main", "deb_glob": "packages/*.deb" },
+    { "name": "YTSideload",                  "release": "Balackburn/YTSideload",          "asset_pattern": "*rootless*.deb" },
+    { "name": "OpenYouTubeSafariExtension",  "repo": "BillyCurtis/OpenYouTubeSafariExtension", "sparse": "OpenYoutubeSafariExtension.appex" }
   ]
 }

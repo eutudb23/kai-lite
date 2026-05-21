@@ -18,6 +18,7 @@ Configured in [`tweaks.json`](./tweaks.json). Each one is a workflow toggle.
 | YTVideoOverlay | [`PoomSmart/YTVideoOverlay`](https://github.com/PoomSmart/YTVideoOverlay) | Overlay framework dep |
 | DontEatMyContent | [`therealFoxster/DontEatMyContent`](https://github.com/therealFoxster/DontEatMyContent) | Notch / Dynamic Island safe-area fix |
 | YTSideload | [`Balackburn/YTSideload`](https://github.com/Balackburn/YTSideload) | **Fixes logout-on-relaunch under sideload** |
+| OpenYouTubeSafariExtension | [`BillyCurtis/OpenYouTubeSafariExtension`](https://github.com/BillyCurtis/OpenYouTubeSafariExtension) | "Open in YouTube" Safari extension (off by default; the pre-built `.appex` is sparse-cloned, not compiled) |
 
 ## How to use
 
@@ -26,13 +27,19 @@ Configured in [`tweaks.json`](./tweaks.json). Each one is a workflow toggle.
 3. **Run the workflow:** GitHub → Actions tab → *Build tweaked IPA* → **Run workflow**:
    - Paste the URL into `decrypted_ipa_url` (it's masked from logs).
    - Toggle tweaks on/off — only the selected ones are compiled (faster builds, separate cache key).
-   - Optionally provide `safari_extension_url` pointing at an `OpenYouTubeSafariExtension.appex` (raw `.appex` or a `.zip` containing one) to add the "Open in YouTube" Safari handler.
+   - Tick `enable_safari_extension` to also bundle the "Open in YouTube" Safari extension (off by default).
    - Keep `build_trollfools_companion` ticked to also produce a `.cyan` package + a zip of just the dylibs/bundles — useful for [TrollFools](https://github.com/Lessica/TrollFools) users or local re-injection without rebuilding.
    - Tick `publish_release` to bundle all artifacts into a **draft** GitHub Release (review then publish manually).
 4. Wait ~6–10 minutes (first run; subsequent runs reuse the `built-debs` cache when the same tweak subset is selected). Download `Tweaked_<run>.ipa` from the run's artifacts. The run summary shows IPA size, source bundle id, and the exact tweak list injected.
 5. **Sign + install** locally with your tool of choice:
    - Feather, AltStore, Sideloadly, ESign — sign with your Apple ID
    - TrollStore — install as-is (no signing)
+
+## Toggles
+
+- **Runtime** (YTABConfig in-app settings drawer) — once a tweak is baked in, YTABConfig adds a settings screen inside YouTube → Settings to flip individual features on/off without rebuilding. Pulls `YouGroupSettings` automatically.
+
+OpenYouTubeSafariExtension is a Safari extension (lives in iOS Settings → Safari → Extensions, not in YTABConfig).
 
 ## Workflow inputs (cheat sheet)
 
@@ -41,7 +48,7 @@ Configured in [`tweaks.json`](./tweaks.json). Each one is a workflow toggle.
 | `decrypted_ipa_url` | Direct download URL (masked in logs) |
 | `bundle_id` | Override `CFBundleIdentifier` |
 | `app_name` | Override display name |
-| `safari_extension_url` | Optional `.appex` (or zip containing one) to inject |
+| `enable_safari_extension` | Bundle the "Open in YouTube" Safari extension |
 | `build_trollfools_companion` | Also produce `.cyan` + dylib zip |
 | `publish_release` | Assemble all artifacts into a draft release |
 | `enable_*` | Per-tweak toggles |

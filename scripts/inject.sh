@@ -47,23 +47,18 @@ file "$SRC_IPA" | grep -qiE 'zip archive|ios app' || {
 declare -a DEB_ARGS=()
 while IFS= read -r name; do
   [[ -z "$name" ]] && continue
-  matches=( "$DEB_DIR"/${name}*.deb )
-  if (( ${#matches[@]} == 0 )) || [[ ! -e "${matches[0]}" ]]; then
-    echo "::error::No .deb in $DEB_DIR matching '${name}*'"; ls "$DEB_DIR"; exit 1
+  matches=( "$DEB_DIR"/${name}*.deb "$DEB_DIR"/${name}*.appex )
+  # Filter out non-existent glob expansions.
+  real=()
+  for m in "${matches[@]}"; do [[ -e "$m" ]] && real+=( "$m" ); done
+  if (( ${#real[@]} == 0 )); then
+    echo "::error::Nothing in $DEB_DIR matching '${name}*' (.deb or .appex)"; ls "$DEB_DIR"; exit 1
   fi
-  DEB_ARGS+=( "${matches[0]}" )
+  DEB_ARGS+=( "${real[0]}" )
 done <<<"$ENABLED_TWEAKS"
 
 if (( ${#DEB_ARGS[@]} == 0 )); then
   echo "::error::No tweaks selected — nothing to inject"; exit 1
-fi
-
-# 2b. Optional: pick up extras (e.g. OpenYouTubeSafariExtension.appex).
-if [[ -n "${EXTRA_INJECT_DIR:-}" && -d "$EXTRA_INJECT_DIR" ]]; then
-  while IFS= read -r -d '' extra; do
-    echo "Including extra inject: $extra"
-    DEB_ARGS+=( "$extra" )
-  done < <(find "$EXTRA_INJECT_DIR" \( -name '*.appex' -o -name '*.bundle' -o -name '*.dylib' \) -print0)
 fi
 
 echo "Injecting ${#DEB_ARGS[@]} item(s):"

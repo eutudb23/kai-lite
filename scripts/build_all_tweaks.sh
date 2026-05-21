@@ -52,6 +52,24 @@ jq -c "$filter_expr" "$MANIFEST" | while read -r entry; do
     continue
   fi
 
+  sparse=$(jq -r '.sparse // empty' <<<"$entry")
+  if [[ -n "$sparse" ]]; then
+    repo=$(jq -r '.repo' <<<"$entry")
+    echo "::group::Sparse-clone $name ($repo :: $sparse)"
+    sparse_dir="$WORK/$name.sparse"
+    rm -rf "$sparse_dir"
+    git clone --quiet -n --depth=1 --filter=tree:0 "https://github.com/$repo.git" "$sparse_dir"
+    git -C "$sparse_dir" sparse-checkout set --no-cone "$sparse"
+    git -C "$sparse_dir" checkout --quiet
+    found=$(find "$sparse_dir" -name "$(basename "$sparse")" -print -quit)
+    if [[ -z "$found" ]]; then
+      echo "::error::Sparse checkout of '$sparse' produced nothing in $sparse_dir"; exit 1
+    fi
+    cp -R "$found" "$OUT_DIR/"
+    echo "::endgroup::"
+    continue
+  fi
+
   repo=$(jq -r '.repo' <<<"$entry")
   ref=$(jq  -r '.ref'  <<<"$entry")
   glob=$(jq -r '.deb_glob' <<<"$entry")

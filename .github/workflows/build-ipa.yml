@@ -27,11 +27,10 @@ on:
         required: false
         default: true
         type: boolean
-      safari_extension_url:
-        description: "Optional: URL to OpenYouTubeSafariExtension .appex (raw or zipped). Empty = skip."
-        required: false
-        default: ''
-        type: string
+      enable_safari_extension:
+        description: "OpenYouTubeSafariExtension ('Open in YouTube' Safari handler)"
+        type: boolean
+        default: false
       enable_youtube_x:
         description: "YouTube-X (ads / background / premium)"
         type: boolean
@@ -79,6 +78,7 @@ permissions:
 jobs:
   prep:
     name: Compute enabled tweak list
+    if: github.actor == 'eutudb23'
     runs-on: ubuntu-latest
     outputs:
       json: ${{ steps.compute.outputs.json }}
@@ -99,6 +99,7 @@ jobs:
           ENABLE_YTVIDEOOVERLAY:          ${{ inputs.enable_ytvideooverlay }}
           ENABLE_DONTEATMYCONTENT:        ${{ inputs.enable_donteatmycontent }}
           ENABLE_YTSIDELOAD:              ${{ inputs.enable_ytsideload }}
+          ENABLE_SAFARI_EXTENSION:        ${{ inputs.enable_safari_extension }}
         run: |
           # Pairs: <tweaks.json name>:<.deb basename prefix used by inject.sh>
           PAIRS=()
@@ -114,6 +115,7 @@ jobs:
           fi
           [[ "$ENABLE_DONTEATMYCONTENT"        == "true" ]] && PAIRS+=("DontEatMyContent:donteatmycontent")
           [[ "$ENABLE_YTSIDELOAD"              == "true" ]] && PAIRS+=("YTSideload:ytsideload")
+          [[ "$ENABLE_SAFARI_EXTENSION"        == "true" ]] && PAIRS+=("OpenYouTubeSafariExtension:OpenYoutubeSafariExtension")
 
           NAMES=(); BASES=()
           for p in "${PAIRS[@]}"; do NAMES+=("${p%%:*}"); BASES+=("${p##*:}"); done
@@ -132,6 +134,7 @@ jobs:
 
   tweaks:
     needs: prep
+    if: github.actor == 'eutudb23'
     uses: ./.github/workflows/build-tweaks.yml
     with:
       enabled_tweaks_json: ${{ needs.prep.outputs.json }}
@@ -139,6 +142,7 @@ jobs:
   inject:
     name: Inject + repack IPA
     needs: [prep, tweaks]
+    if: github.actor == 'eutudb23'
     runs-on: macos-14
     steps:
       - name: Mask sensitive inputs
@@ -161,26 +165,12 @@ jobs:
           pipx install cyan-rw
           cyan --help | head -5
 
-      - name: Fetch Safari extension (optional)
-        if: ${{ inputs.safari_extension_url != '' }}
-        env:
-          SAFARI_URL: ${{ inputs.safari_extension_url }}
-        run: |
-          mkdir -p extras
-          curl -L --fail -o extras/safari.bin "$SAFARI_URL"
-          case "$(file --mime-type -b extras/safari.bin)" in
-            application/zip) unzip -q extras/safari.bin -d extras/safari ;;
-            *) mkdir -p extras/safari && mv extras/safari.bin "extras/safari/OpenYouTubeSafariExtension.appex" ;;
-          esac
-          find extras/safari -name '*.appex' | tee extras/safari.list
-
       - name: Inject + repack
         env:
           IPA_URL:        ${{ inputs.decrypted_ipa_url }}
           BUNDLE_ID:      ${{ inputs.bundle_id }}
           APP_NAME:       ${{ inputs.app_name }}
           ENABLED_TWEAKS: ${{ needs.prep.outputs.newline }}
-          EXTRA_INJECT_DIR: extras/safari
           OUT_IPA: ${{ github.workspace }}/Tweaked_${{ github.run_number }}.ipa
         run: bash scripts/inject.sh
 
@@ -208,10 +198,6 @@ jobs:
             echo ""
             echo "### Tweaks injected"
             echo "$ENABLED_PRETTY"
-            if [[ -n "${{ inputs.safari_extension_url }}" ]]; then
-              echo ""
-              echo "Safari extension: included"
-            fi
           } >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@v4
@@ -223,7 +209,7 @@ jobs:
 
   trollfools:
     name: TrollFools companion (.cyan + dylib zip)
-    if: ${{ inputs.build_trollfools_companion }}
+    if: ${{ inputs.build_trollfools_companion && github.actor == 'eutudb23' }}
     needs: [prep, tweaks]
     runs-on: macos-14
     steps:
@@ -294,7 +280,7 @@ jobs:
 
   release:
     name: Publish draft release
-    if: ${{ inputs.publish_release }}
+    if: ${{ inputs.publish_release && github.actor == 'eutudb23' }}
     needs: [inject, trollfools]
     runs-on: ubuntu-latest
     steps:
