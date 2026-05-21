@@ -1,0 +1,317 @@
+name: Build tweaked IPA
+
+on:
+  workflow_dispatch:
+    inputs:
+      decrypted_ipa_url:
+        description: "Direct download URL of decrypted IPA (Catbox/pixeldrain)"
+        required: true
+        type: string
+      bundle_id:
+        description: "Bundle ID for the resulting app"
+        required: false
+        default: com.google.ios.youtube.tweaked
+        type: string
+      app_name:
+        description: "Display name"
+        required: false
+        default: YouTube
+        type: string
+      publish_release:
+        description: "Publish as draft GitHub Release (review then publish)"
+        required: false
+        default: false
+        type: boolean
+      build_trollfools_companion:
+        description: "Also build .cyan + dylib zip for TrollFools"
+        required: false
+        default: true
+        type: boolean
+      safari_extension_url:
+        description: "Optional: URL to OpenYouTubeSafariExtension .appex (raw or zipped). Empty = skip."
+        required: false
+        default: ''
+        type: string
+      enable_youtube_x:
+        description: "YouTube-X (ads / background / premium)"
+        type: boolean
+        default: true
+      enable_youpip:
+        description: "YouPiP (PiP)"
+        type: boolean
+        default: true
+      enable_ytuhd:
+        description: "YTUHD (4K unlock)"
+        type: boolean
+        default: true
+      enable_youquality:
+        description: "YouQuality (remember quality)"
+        type: boolean
+        default: true
+      enable_return_youtube_dislikes:
+        description: "Return YouTube Dislikes"
+        type: boolean
+        default: true
+      enable_ytabconfig:
+        description: "YTABConfig (settings UI)"
+        type: boolean
+        default: true
+      enable_ytvideooverlay:
+        description: "YTVideoOverlay (framework dep)"
+        type: boolean
+        default: true
+      enable_donteatmycontent:
+        description: "DontEatMyContent (notch safe-area)"
+        type: boolean
+        default: true
+      enable_ytsideload:
+        description: "YTSideload (fixes logout-on-relaunch)"
+        type: boolean
+        default: true
+
+concurrency:
+  group: build-ipa-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  prep:
+    name: Compute enabled tweak list
+    runs-on: ubuntu-latest
+    outputs:
+      json: ${{ steps.compute.outputs.json }}
+      newline: ${{ steps.compute.outputs.newline }}
+      pretty: ${{ steps.compute.outputs.pretty }}
+    steps:
+      - name: Mask sensitive inputs
+        uses: levibostian/action-hide-sensitive-inputs@v2
+
+      - id: compute
+        env:
+          ENABLE_YOUTUBE_X:               ${{ inputs.enable_youtube_x }}
+          ENABLE_YOUPIP:                  ${{ inputs.enable_youpip }}
+          ENABLE_YTUHD:                   ${{ inputs.enable_ytuhd }}
+          ENABLE_YOUQUALITY:              ${{ inputs.enable_youquality }}
+          ENABLE_RETURN_YOUTUBE_DISLIKES: ${{ inputs.enable_return_youtube_dislikes }}
+          ENABLE_YTABCONFIG:              ${{ inputs.enable_ytabconfig }}
+          ENABLE_YTVIDEOOVERLAY:          ${{ inputs.enable_ytvideooverlay }}
+          ENABLE_DONTEATMYCONTENT:        ${{ inputs.enable_donteatmycontent }}
+          ENABLE_YTSIDELOAD:              ${{ inputs.enable_ytsideload }}
+        run: |
+          # Pairs: <tweaks.json name>:<.deb basename prefix used by inject.sh>
+          PAIRS=()
+          [[ "$ENABLE_YTVIDEOOVERLAY"          == "true" ]] && PAIRS+=("YTVideoOverlay:ytvideooverlay")
+          [[ "$ENABLE_YOUTUBE_X"               == "true" ]] && PAIRS+=("YouTube-X:youtubex")
+          [[ "$ENABLE_YOUPIP"                  == "true" ]] && PAIRS+=("YouPiP:youpip")
+          [[ "$ENABLE_YTUHD"                   == "true" ]] && PAIRS+=("YTUHD:ytuhd")
+          [[ "$ENABLE_YOUQUALITY"              == "true" ]] && PAIRS+=("YouQuality:youquality")
+          [[ "$ENABLE_RETURN_YOUTUBE_DISLIKES" == "true" ]] && PAIRS+=("Return-YouTube-Dislikes:ryd")
+          if [[ "$ENABLE_YTABCONFIG" == "true" ]]; then
+            PAIRS+=("YouGroupSettings:yougroupsettings")   # silent runtime dep
+            PAIRS+=("YTABConfig:ytabconfig")
+          fi
+          [[ "$ENABLE_DONTEATMYCONTENT"        == "true" ]] && PAIRS+=("DontEatMyContent:donteatmycontent")
+          [[ "$ENABLE_YTSIDELOAD"              == "true" ]] && PAIRS+=("YTSideload:ytsideload")
+
+          NAMES=(); BASES=()
+          for p in "${PAIRS[@]}"; do NAMES+=("${p%%:*}"); BASES+=("${p##*:}"); done
+
+          JSON=$(printf '%s\n' "${NAMES[@]}" | jq -R . | jq -sc .)
+          NL=$(printf '%s\n' "${BASES[@]}")
+          PRETTY=$(printf '  - %s\n' "${NAMES[@]}")
+
+          {
+            echo "json=$JSON"
+            echo "newline<<EOF"; echo "$NL"; echo "EOF"
+            echo "pretty<<EOF"; echo "$PRETTY"; echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Enabled tweaks: $JSON"
+
+  tweaks:
+    needs: prep
+    uses: ./.github/workflows/build-tweaks.yml
+    with:
+      enabled_tweaks_json: ${{ needs.prep.outputs.json }}
+
+  inject:
+    name: Inject + repack IPA
+    needs: [prep, tweaks]
+    runs-on: macos-14
+    steps:
+      - name: Mask sensitive inputs
+        uses: levibostian/action-hide-sensitive-inputs@v2
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: built-debs
+          path: built-debs
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install cyan (pyzule-rw)
+        run: |
+          python -m pip install --upgrade pip pipx
+          pipx install cyan-rw
+          cyan --help | head -5
+
+      - name: Fetch Safari extension (optional)
+        if: ${{ inputs.safari_extension_url != '' }}
+        env:
+          SAFARI_URL: ${{ inputs.safari_extension_url }}
+        run: |
+          mkdir -p extras
+          curl -L --fail -o extras/safari.bin "$SAFARI_URL"
+          case "$(file --mime-type -b extras/safari.bin)" in
+            application/zip) unzip -q extras/safari.bin -d extras/safari ;;
+            *) mkdir -p extras/safari && mv extras/safari.bin "extras/safari/OpenYouTubeSafariExtension.appex" ;;
+          esac
+          find extras/safari -name '*.appex' | tee extras/safari.list
+
+      - name: Inject + repack
+        env:
+          IPA_URL:        ${{ inputs.decrypted_ipa_url }}
+          BUNDLE_ID:      ${{ inputs.bundle_id }}
+          APP_NAME:       ${{ inputs.app_name }}
+          ENABLED_TWEAKS: ${{ needs.prep.outputs.newline }}
+          EXTRA_INJECT_DIR: extras/safari
+          OUT_IPA: ${{ github.workspace }}/Tweaked_${{ github.run_number }}.ipa
+        run: bash scripts/inject.sh
+
+      - name: Probe IPA + write summary
+        env:
+          ENABLED_PRETTY: ${{ needs.prep.outputs.pretty }}
+          IPA_PATH: ${{ github.workspace }}/Tweaked_${{ github.run_number }}.ipa
+        run: |
+          size_h=$(du -h "$IPA_PATH" | awk '{print $1}')
+          src_bundle=$(unzip -p .inject/youtube.ipa 'Payload/*.app/Info.plist' 2>/dev/null \
+            | plutil -extract CFBundleIdentifier raw - - 2>/dev/null || echo "unknown")
+          cyan_ver=$(cyan --version 2>/dev/null || echo unknown)
+          {
+            echo "## Tweaked IPA built"
+            echo ""
+            echo "| field | value |"
+            echo "|---|---|"
+            echo "| output | \`$(basename "$IPA_PATH")\` |"
+            echo "| size | $size_h |"
+            echo "| source bundle id | \`$src_bundle\` |"
+            echo "| target bundle id | \`${{ inputs.bundle_id }}\` |"
+            echo "| display name | \`${{ inputs.app_name }}\` |"
+            echo "| cyan | \`$cyan_ver\` |"
+            echo "| run | \`${{ github.run_number }}\` |"
+            echo ""
+            echo "### Tweaks injected"
+            echo "$ENABLED_PRETTY"
+            if [[ -n "${{ inputs.safari_extension_url }}" ]]; then
+              echo ""
+              echo "Safari extension: included"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Tweaked-ipa-${{ github.run_number }}
+          path: Tweaked_${{ github.run_number }}.ipa
+          retention-days: 90
+          if-no-files-found: error
+
+  trollfools:
+    name: TrollFools companion (.cyan + dylib zip)
+    if: ${{ inputs.build_trollfools_companion }}
+    needs: [prep, tweaks]
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: built-debs
+          path: built-debs
+
+      - run: brew install dpkg
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install cyan (provides cgen)
+        run: |
+          python -m pip install --upgrade pip pipx
+          pipx install cyan-rw
+
+      - name: Generate .cyan package
+        env:
+          ENABLED_TWEAKS: ${{ needs.prep.outputs.newline }}
+        run: |
+          DEBS=()
+          while IFS= read -r name; do
+            [[ -z "$name" ]] && continue
+            d=$(ls built-debs/${name}*.deb 2>/dev/null | head -1)
+            [[ -n "$d" ]] && DEBS+=("$d")
+          done <<<"$ENABLED_TWEAKS"
+          echo "Including in .cyan: ${DEBS[*]}"
+          # Prefer cgen if available; otherwise cyan --cyan mode.
+          if command -v cgen >/dev/null; then
+            cgen -o "Tweaked_${{ github.run_number }}.cyan" -i "${DEBS[@]}" \
+              -b "${{ inputs.bundle_id }}" -n "${{ inputs.app_name }}" -uwef
+          else
+            cyan --cyan -o "Tweaked_${{ github.run_number }}.cyan" -f "${DEBS[@]}"
+          fi
+
+      - name: Extract dylibs/bundles for TrollFools zip
+        env:
+          ENABLED_TWEAKS: ${{ needs.prep.outputs.newline }}
+        run: |
+          set -e
+          STAGE=$(mktemp -d)
+          while IFS= read -r name; do
+            [[ -z "$name" ]] && continue
+            deb=$(ls built-debs/${name}*.deb 2>/dev/null | head -1) || continue
+            [[ -z "$deb" ]] && continue
+            tmp=$(mktemp -d)
+            dpkg-deb -x "$deb" "$tmp"
+            find "$tmp" \( -name '*.dylib' -o -name '*.bundle' -o -name '*.framework' \) \
+              -exec cp -R {} "$STAGE/" \;
+            rm -rf "$tmp"
+          done <<<"$ENABLED_TWEAKS"
+          ( cd "$STAGE" && zip -r "$GITHUB_WORKSPACE/Tweaked_${{ github.run_number }}-dylibs.zip" . )
+          ls -lh "Tweaked_${{ github.run_number }}-dylibs.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Tweaked-trollfools-${{ github.run_number }}
+          path: |
+            Tweaked_${{ github.run_number }}.cyan
+            Tweaked_${{ github.run_number }}-dylibs.zip
+          retention-days: 90
+          if-no-files-found: error
+
+  release:
+    name: Publish draft release
+    if: ${{ inputs.publish_release }}
+    needs: [inject, trollfools]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: Tweaked-*-${{ github.run_number }}
+          merge-multiple: true
+          path: release-assets
+
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls -lh release-assets/
+          TAG="tweak-${{ github.run_number }}"
+          gh release create "$TAG" \
+            --draft \
+            --title "Tweaked ${{ inputs.app_name }} #${{ github.run_number }}" \
+            --notes "Built from tweaks.json @ \`${{ github.sha }}\`. Sign locally with Feather / AltStore / Sideloadly / ESign, or install via TrollStore." \
+            release-assets/*

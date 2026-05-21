@@ -1,0 +1,10 @@
+# Facts: read by git. No prior .gitignore exists at repo root.
+.build/
+.inject/
+built-debs/
+*.ipa
+*.deb
+.DS_Store
+__pycache__/
+.cursor/
+.claude/

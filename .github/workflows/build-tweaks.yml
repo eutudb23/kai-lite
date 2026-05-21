@@ -1,0 +1,82 @@
+name: Build tweaks (.deb)
+
+on:
+  workflow_call:
+    inputs:
+      enabled_tweaks_json:
+        description: 'JSON array of tweak names to build (empty = all)'
+        required: false
+        type: string
+        default: ''
+    outputs:
+      artifact:
+        description: "Name of the artifact containing built .deb files"
+        value: built-debs
+  workflow_dispatch:
+    inputs:
+      enabled_tweaks_json:
+        description: 'JSON array of tweak names to build (empty = all)'
+        required: false
+        type: string
+        default: ''
+
+concurrency:
+  group: build-tweaks-${{ github.ref }}-${{ inputs.enabled_tweaks_json }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build all tweaks
+    runs-on: macos-14
+    env:
+      THEOS: /opt/theos
+      THEOS_COMMIT: 9bc73406ef4ddb208314c2b53c0f6fe6f5b15ce4
+      IOS_SDK_URL: https://github.com/theos/sdks/archive/refs/heads/master.zip
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache built .deb files
+        id: cache-debs
+        uses: actions/cache@v4
+        with:
+          path: built-debs
+          key: debs-${{ runner.os }}-${{ hashFiles('tweaks.json') }}-${{ inputs.enabled_tweaks_json }}
+
+      - name: Install build tools
+        if: steps.cache-debs.outputs.cache-hit != 'true'
+        run: |
+          brew update
+          brew install ldid dpkg make jq gh xz coreutils
+
+      - name: Install Theos
+        if: steps.cache-debs.outputs.cache-hit != 'true'
+        run: |
+          sudo mkdir -p "$THEOS"
+          sudo chown "$USER" "$THEOS"
+          git clone --recursive https://github.com/theos/theos.git "$THEOS"
+          git -C "$THEOS" checkout "$THEOS_COMMIT"
+          curl -L -o /tmp/sdks.zip "$IOS_SDK_URL"
+          unzip -q /tmp/sdks.zip -d /tmp/sdks
+          mv /tmp/sdks/sdks-master/iPhoneOS16.5.sdk "$THEOS/sdks/"
+          ls "$THEOS/sdks/"
+
+      - name: Build tweaks
+        if: steps.cache-debs.outputs.cache-hit != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
+          BUILD_FILTER: ${{ inputs.enabled_tweaks_json }}
+        run: bash scripts/build_all_tweaks.sh
+
+      - name: List artifacts
+        run: ls -lh built-debs/ || echo "no debs (empty filter?)"
+
+      - name: Upload built-debs artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-debs
+          path: built-debs/*.deb
+          retention-days: 30
+          if-no-files-found: error
