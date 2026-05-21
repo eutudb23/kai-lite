@@ -30,9 +30,9 @@ jobs:
     if: github.actor == 'eutudb23'
     runs-on: macos-14
     env:
-      THEOS: /opt/theos
+      THEOS: ${{ github.workspace }}/theos
       THEOS_COMMIT: 9bc73406cf80b711ef4d02c15ff1dedc4478a275
-      IOS_SDK_URL: https://github.com/theos/sdks/archive/refs/heads/master.zip
+      IOS_SDK: iPhoneOS16.5.sdk
 
     steps:
       - name: Checkout
@@ -48,7 +48,6 @@ jobs:
         uses: actions/cache@v5
         with:
           path: built-debs
-          # hashFiles digests both files — comma-free, stable, length-bounded.
           key: debs-${{ runner.os }}-${{ hashFiles('tweaks.json', '.cache-filter.txt') }}
 
       - name: Install build tools
@@ -58,16 +57,25 @@ jobs:
           brew update
           brew install ldid dpkg
 
-      - name: Install Theos
+      - name: Checkout Theos (validates SHA up-front)
+        if: steps.cache-debs.outputs.cache-hit != 'true'
+        uses: actions/checkout@v6
+        with:
+          repository: theos/theos
+          ref: ${{ env.THEOS_COMMIT }}
+          path: theos
+          submodules: recursive
+
+      - name: Sparse-clone iPhoneOS SDK
         if: steps.cache-debs.outputs.cache-hit != 'true'
         run: |
-          sudo mkdir -p "$THEOS"
-          sudo chown "$USER" "$THEOS"
-          git clone --recursive https://github.com/theos/theos.git "$THEOS"
-          git -C "$THEOS" checkout "$THEOS_COMMIT"
-          curl -L -o /tmp/sdks.zip "$IOS_SDK_URL"
-          unzip -q /tmp/sdks.zip -d /tmp/sdks
-          mv /tmp/sdks/sdks-master/iPhoneOS16.5.sdk "$THEOS/sdks/"
+          # Only pull the one SDK we use (saves ~1-2 min vs master.zip of all SDKs).
+          tmp=$(mktemp -d)
+          git clone -n --depth=1 --filter=tree:0 https://github.com/theos/sdks "$tmp"
+          git -C "$tmp" sparse-checkout set --no-cone "$IOS_SDK"
+          git -C "$tmp" checkout
+          mkdir -p "$THEOS/sdks"
+          mv "$tmp/$IOS_SDK" "$THEOS/sdks/"
           ls "$THEOS/sdks/"
 
       - name: Build tweaks

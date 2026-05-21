@@ -1,19 +1,19 @@
 {
   "headers": [
-    { "name": "YouTubeHeader", "repo": "PoomSmart/YouTubeHeader", "ref": "main" },
-    { "name": "PSHeader",      "repo": "PoomSmart/PSHeader",      "ref": "main" }
+    { "name": "YouTubeHeader", "repo": "PoomSmart/YouTubeHeader" },
+    { "name": "PSHeader",      "repo": "PoomSmart/PSHeader" }
   ],
   "tweaks": [
-    { "name": "YTVideoOverlay",          "repo": "PoomSmart/YTVideoOverlay",          "ref": "main", "deb_glob": "packages/*.deb", "framework": true },
-    { "name": "YouTube-X",               "repo": "PoomSmart/YouTube-X",               "ref": "main", "deb_glob": "packages/*.deb" },
-    { "name": "YouPiP",                  "repo": "PoomSmart/YouPiP",                  "ref": "main", "deb_glob": "packages/*.deb" },
-    { "name": "YTUHD",                   "repo": "Tonwalter888/YTUHD",                "ref": "main", "deb_glob": "packages/*.deb" },
-    { "name": "YouQuality",              "repo": "PoomSmart/YouQuality",              "ref": "main", "deb_glob": "packages/*.deb" },
-    { "name": "Return-YouTube-Dislikes", "repo": "PoomSmart/Return-YouTube-Dislikes", "ref": "main", "deb_glob": "packages/*.deb" },
-    { "name": "YouGroupSettings",        "repo": "PoomSmart/YouGroupSettings",        "ref": "main", "deb_glob": "packages/*.deb" },
-    { "name": "YTABConfig",              "repo": "PoomSmart/YTABConfig",              "ref": "main", "deb_glob": "packages/*.deb" },
-    { "name": "DontEatMyContent",            "repo": "therealFoxster/DontEatMyContent",   "ref": "main", "deb_glob": "packages/*.deb" },
-    { "name": "YTSideload",                  "release": "Balackburn/YTSideload",          "asset_pattern": "*rootless*.deb" },
+    { "name": "YTVideoOverlay",              "repo": "PoomSmart/YTVideoOverlay",               "deb_glob": "packages/*.deb", "framework": true },
+    { "name": "YouTube-X",                   "repo": "PoomSmart/YouTube-X",                    "deb_glob": "packages/*.deb" },
+    { "name": "YouPiP",                      "repo": "PoomSmart/YouPiP",                       "deb_glob": "packages/*.deb" },
+    { "name": "YTUHD",                       "repo": "Tonwalter888/YTUHD",                     "deb_glob": "packages/*.deb" },
+    { "name": "YouQuality",                  "repo": "PoomSmart/YouQuality",                   "deb_glob": "packages/*.deb" },
+    { "name": "Return-YouTube-Dislikes",     "repo": "PoomSmart/Return-YouTube-Dislikes",      "deb_glob": "packages/*.deb" },
+    { "name": "YouGroupSettings",            "repo": "PoomSmart/YouGroupSettings",             "deb_glob": "packages/*.deb" },
+    { "name": "YTABConfig",                  "repo": "PoomSmart/YTABConfig",                   "deb_glob": "packages/*.deb" },
+    { "name": "DontEatMyContent",            "repo": "therealFoxster/DontEatMyContent",        "deb_glob": "packages/*.deb" },
+    { "name": "YTSideload",                  "release": "Balackburn/YTSideload",               "asset_pattern": "*rootless*.deb" },
     { "name": "OpenYouTubeSafariExtension",  "repo": "BillyCurtis/OpenYouTubeSafariExtension", "sparse": "OpenYoutubeSafariExtension.appex" }
   ]
 }
