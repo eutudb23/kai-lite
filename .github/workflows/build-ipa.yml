@@ -117,7 +117,7 @@ jobs:
           fi
           [[ "$ENABLE_DONTEATMYCONTENT"        == "true" ]] && PAIRS+=("DontEatMyContent:donteatmycontent")
           [[ "$ENABLE_YTSIDELOAD"              == "true" ]] && PAIRS+=("YTSideload:ytsideload")
-          [[ "$ENABLE_SAFARI_EXTENSION"        == "true" ]] && PAIRS+=("OpenYouTubeSafariExtension:OpenYoutubeSafariExtension")
+          [[ "$ENABLE_SAFARI_EXTENSION"        == "true" ]] && PAIRS+=("OpenYouTubeSafariExtension:OpenYouTubeSafariExtension")
 
           NAMES=(); BASES=()
           for p in "${PAIRS[@]}"; do NAMES+=("${p%%:*}"); BASES+=("${p##*:}"); done

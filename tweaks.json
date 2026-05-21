@@ -14,6 +14,6 @@
     { "name": "YTABConfig",                  "repo": "PoomSmart/YTABConfig",                   "deb_glob": "packages/*.deb" },
     { "name": "DontEatMyContent",            "repo": "therealFoxster/DontEatMyContent",        "deb_glob": "packages/*.deb" },
     { "name": "YTSideload",                  "release": "Balackburn/YTSideload",               "asset_pattern": "YTSideload.dylib" },
-    { "name": "OpenYouTubeSafariExtension",  "repo": "BillyCurtis/OpenYouTubeSafariExtension", "sparse": "OpenYoutubeSafariExtension.appex" }
+    { "name": "OpenYouTubeSafariExtension",  "repo": "BillyCurtis/OpenYouTubeSafariExtension", "sparse": "OpenYouTubeSafariExtension.appex" }
   ]
 }
