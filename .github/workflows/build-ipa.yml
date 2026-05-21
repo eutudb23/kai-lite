@@ -25,12 +25,12 @@ on:
       build_trollfools_companion:
         description: "Also build .cyan + dylib zip for TrollFools"
         required: false
-        default: true
+        default: false
         type: boolean
       enable_safari_extension:
         description: "OpenYouTubeSafariExtension ('Open in YouTube' Safari handler)"
         type: boolean
-        default: false
+        default: true
       enable_youtube_x:
         description: "YouTube-X (ads / background / premium)"
         type: boolean
@@ -299,7 +299,7 @@ jobs:
 
   release:
     name: Publish draft release
-    if: ${{ inputs.publish_release && github.actor == 'eutudb23' }}
+    if: ${{ always() && inputs.publish_release && github.actor == 'eutudb23' && needs.inject.result == 'success' }}
     needs: [inject, trollfools]
     runs-on: ubuntu-latest
     steps:
@@ -308,6 +308,7 @@ jobs:
           pattern: Tweaked-*-${{ github.run_number }}
           merge-multiple: true
           path: release-assets
+        continue-on-error: true
 
       - name: Create draft release
         env:
