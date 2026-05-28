@@ -8,36 +8,39 @@ static void KL_DylibLoaded(void) {
     KL_LOG("dylib loaded section=%ld", (long)KaiLiteSection);
 }
 
-// Visible diagnostic: shows a UIAlert the first time YT launches with our dylib
-// loaded. If the user sees the alert → dylib is loaded → Settings.x hooks are
-// installed (they're in the same .dylib). If they don't see it, the dylib
-// isn't loading in the current build.
+// Visible diagnostic. applicationDidBecomeActive: fires LATER than
+// didFinishLaunching — after Substrate has injected all hooks AND the window
+// hierarchy is fully built. We also fall back to a YTPlayerViewController hook
+// (proven loaded via sponsor-skip) so we get coverage even if the AppDelegate
+// class name has drifted.
+static dispatch_once_t kl_alertOnce;
+
+static void KL_PresentAliveAlert(void) {
+    UIWindow *win = [UIApplication sharedApplication].keyWindow;
+    if (!win) win = [UIApplication sharedApplication].windows.firstObject;
+    UIViewController *root = win.rootViewController;
+    while (root.presentedViewController) root = root.presentedViewController;
+    if (!root) {
+        KL_LOG("KL_PresentAliveAlert: no rootVC available");
+        return;
+    }
+    UIAlertController *alert = [UIAlertController
+        alertControllerWithTitle:@"kai-lite loaded"
+                         message:[NSString stringWithFormat:@"v0.1.0 — section %ld registered.\nOpen Settings → Tweaks to verify.", (long)KaiLiteSection]
+                  preferredStyle:UIAlertControllerStyleAlert];
+    [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
+    [root presentViewController:alert animated:YES completion:nil];
+}
+
 %hook YTAppDelegate
-- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    BOOL result = %orig;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            UIWindow *keyWindow = nil;
-            for (UIScene *scene in [UIApplication sharedApplication].connectedScenes) {
-                if ([scene isKindOfClass:[UIWindowScene class]]) {
-                    for (UIWindow *w in ((UIWindowScene *)scene).windows) {
-                        if (w.isKeyWindow) { keyWindow = w; break; }
-                    }
-                    if (keyWindow) break;
-                }
-            }
-            UIViewController *root = keyWindow.rootViewController;
-            while (root.presentedViewController) root = root.presentedViewController;
-            UIAlertController *alert = [UIAlertController
-                alertControllerWithTitle:@"kai-lite loaded"
-                                 message:[NSString stringWithFormat:@"v0.1.0 — section %ld is registered.\nOpen Settings → Tweaks to verify.", (long)KaiLiteSection]
-                          preferredStyle:UIAlertControllerStyleAlert];
-            [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
-            [root presentViewController:alert animated:YES completion:nil];
+- (void)applicationDidBecomeActive:(UIApplication *)application {
+    %orig;
+    dispatch_once(&kl_alertOnce, ^{
+        KL_LOG("applicationDidBecomeActive — presenting alive alert");
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            KL_PresentAliveAlert();
         });
     });
-    return result;
 }
 %end
 
@@ -75,6 +78,22 @@ static NSString *KLEnabledCategoriesParam(void) {
 %hook YTPlayerViewController
 
 %property (nonatomic, strong) NSMutableDictionary *kl_sbSegments;
+
+// Fallback diagnostic — uses the class we KNOW is hooked working (since
+// sponsor-skip uses it). If user opens any video and sees this toast, the
+// dylib + Tweak.x %hooks are definitely loaded in the current build.
+- (void)viewDidAppear:(BOOL)animated {
+    %orig;
+    static dispatch_once_t playerOnce;
+    dispatch_once(&playerOnce, ^{
+        KL_LOG("YTPlayerViewController.viewDidAppear FIRED (dylib confirmed loaded)");
+        Class toastCls = %c(YTToastResponderEvent);
+        if (toastCls) {
+            NSString *msg = [NSString stringWithFormat:@"kai-lite loaded — section %ld", (long)KaiLiteSection];
+            [[toastCls eventWithMessage:msg firstResponder:self] send];
+        }
+    });
+}
 
 - (void)playbackController:(id)arg1 didActivateVideo:(id)arg2 withPlaybackData:(id)arg3 {
     %orig;
