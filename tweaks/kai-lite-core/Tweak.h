@@ -24,8 +24,8 @@
 // kai-lite owns settings category 27500 in YouTube's Settings UI.
 static const NSInteger KaiLiteSection = 27500;
 
-// SponsorBlock category list. Order matters for the settings UI.
-static NSArray<NSString *> *const KLSponsorCategories = nil;  // defined in Tweak.x
+// SponsorBlock category list (implemented in Tweak.x). Order matters for the settings UI.
+NSArray<NSString *> *KLSponsorCategoriesList(void);
 
 @interface YTPlayerViewController : UIViewController
 @property (nonatomic, strong) NSMutableDictionary *kl_sbSegments;
