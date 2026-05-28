@@ -1,16 +1,21 @@
 #import "Tweak.h"
 #import <YouTubeHeader/YTSettingsGroupData.h>
 
-// Current YouTube uses YTSettingsGroupData.orderedCategories as the live category
-// list. When YTABConfig is installed it manages ordering centrally (signalled by
-// the +tweaks class method), so we no-op in that case to avoid double-inserting.
+// Temporary diagnostic logging — remove once Settings.x section appears.
+#define KL_LOG(fmt, ...) NSLog(@"[kai-lite] " fmt, ##__VA_ARGS__)
+
 %hook YTSettingsGroupData
 - (NSArray<NSNumber *> *)orderedCategories {
+    NSArray *orig = %orig;
+    KL_LOG(@"orderedCategories: self.type=%ld orig.count=%lu hasTweaksMethod=%d",
+        (long)self.type, (unsigned long)orig.count,
+        class_getClassMethod(objc_getClass("YTSettingsGroupData"), @selector(tweaks)) != NULL);
     if (self.type != 1 || class_getClassMethod(objc_getClass("YTSettingsGroupData"), @selector(tweaks)))
-        return %orig;
-    NSMutableArray *mutable = [%orig mutableCopy];
+        return orig;
+    NSMutableArray *mutable = [orig mutableCopy];
     if (![mutable containsObject:@(KaiLiteSection)])
         [mutable addObject:@(KaiLiteSection)];
+    KL_LOG(@"orderedCategories: returning %@", mutable);
     return [mutable copy];
 }
 %end
@@ -18,6 +23,7 @@
 %hook YTAppSettingsPresentationData
 + (NSArray *)settingsCategoryOrder {
     NSArray *order = %orig;
+    KL_LOG(@"settingsCategoryOrder: orig=%@", order);
     NSMutableArray *mutable = [order mutableCopy];
     NSUInteger insertIndex = [order indexOfObject:@(1)];
     if (insertIndex != NSNotFound) {
@@ -48,12 +54,14 @@
 
 %new(v@:@)
 - (void)updateKaiLiteSectionWithEntry:(id)entry {
+    KL_LOG(@"updateKaiLiteSectionWithEntry FIRED entry=%@", entry);
     NSMutableArray<YTSettingsSectionItem *> *items = [NSMutableArray array];
     // Current YouTube exposes the settings view controller via _dataDelegate.
     // Older builds called it _settingsViewControllerDelegate — fall back if the
     // primary key returns nil so the tweak works across versions.
     YTSettingsViewController *settingsVC = [self valueForKey:@"_dataDelegate"];
     if (!settingsVC) settingsVC = [self valueForKey:@"_settingsViewControllerDelegate"];
+    KL_LOG(@"updateKaiLiteSectionWithEntry settingsVC=%@ (class=%@)", settingsVC, NSStringFromClass([settingsVC class]));
 
     // Top-level: SponsorBlock entry (pushes a picker with the sub-settings).
     YTSettingsSectionItem *sponsor = [%c(YTSettingsSectionItem)
@@ -113,9 +121,11 @@ accessibilityIdentifier:@"KaiLiteSectionItem"
 
 - (void)updateSectionForCategory:(NSUInteger)category withEntry:(id)entry {
     if (category == KaiLiteSection) {
+        KL_LOG(@"updateSectionForCategory: category=%lu (OURS)", (unsigned long)category);
         [self updateKaiLiteSectionWithEntry:entry];
         return;
     }
+    KL_LOG(@"updateSectionForCategory: category=%lu (skipping)", (unsigned long)category);
     %orig;
 }
 
