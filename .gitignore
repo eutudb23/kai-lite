@@ -8,3 +8,9 @@ built-debs/
 __pycache__/
 .cursor/
 .claude/
+
+# Theos build artifacts from in-tree tweaks
+tweaks/*/packages/
+tweaks/*/.theos/
+tweaks/*/obj/
+tweaks/*/_/

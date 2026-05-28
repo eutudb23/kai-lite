@@ -13,8 +13,7 @@
     { "name": "YouGroupSettings",            "repo": "PoomSmart/YouGroupSettings",             "deb_glob": "packages/*.deb" },
     { "name": "YTABConfig",                  "repo": "PoomSmart/YTABConfig",                   "deb_glob": "packages/*.deb" },
     { "name": "DontEatMyContent",            "repo": "therealFoxster/DontEatMyContent",        "deb_glob": "packages/*.deb" },
-    { "name": "Alderis",                     "url": "https://repo.chariz.com/debs/ws.hbang.alderis_1.1.1_iphoneos-arm.deb",                   "sha256": "cceb9c2b48647f0bf44fc7e2b55ccf4ad8db1341d66f379f6402ec0a0aa966ec" },
-    { "name": "iSponsorBlock",               "url": "https://repo.icrazeios.com/debs/com.galacticdev.isponsorblock_1.3.1_iphoneos-arm64.deb", "sha256": "ade290f8b5e3e44d48d67fae0cf52e555e4dbb6f4d740c99277eb1b8e225ff60" },
+    { "name": "KaiLiteCore",                 "local": "tweaks/kai-lite-core",                  "deb_glob": "packages/*.deb" },
     { "name": "YTSideload",                  "release": "Balackburn/YTSideload",               "asset_pattern": "YTSideload.dylib" },
     { "name": "OpenYouTubeSafariExtension",  "repo": "BillyCurtis/OpenYouTubeSafariExtension", "sparse": "OpenYouTubeSafariExtension.appex" }
   ]
