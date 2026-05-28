@@ -21,8 +21,10 @@
 #define klSetBool(v, key)   [[KLUserDefaults standardUserDefaults] setBool:(v) forKey:key]
 #define klSetInt(v, key)    [[KLUserDefaults standardUserDefaults] setInteger:(v) forKey:key]
 
-// kai-lite owns settings category 27500 in YouTube's Settings UI.
-static const NSInteger KaiLiteSection = 27500;
+// kai-lite owns settings category 999 in YouTube's Settings UI. Matches
+// the low-number range used by every working PoomSmart tweak (YouPiP=200,
+// YTABC=404, RYD=1080) — large IDs are not rendered on current YouTube.
+static const NSInteger KaiLiteSection = 999;
 
 // SponsorBlock category list (implemented in Tweak.x). Order matters for the settings UI.
 NSArray<NSString *> *KLSponsorCategoriesList(void);
@@ -42,7 +44,6 @@ NSArray<NSString *> *KLSponsorCategoriesList(void);
 
 @interface YTSettingsSectionItemManager (KaiLite)
 - (void)updateKaiLiteSectionWithEntry:(id)entry;
-- (YTSettingsSectionItem *)kl_switchWithTitle:(NSString *)title key:(NSString *)key;
 @end
 
 @interface YTAppSettingsPresentationData : NSObject
