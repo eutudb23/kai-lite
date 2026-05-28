@@ -1,11 +1,45 @@
 #import "Tweak.h"
 
-// Fires at dylib load. If the user sees this in the log, the dylib injected and
-// its constructors ran — confirming Settings.x hooks should also be installed.
+// Dylib-load marker. Logs survive iOS log redaction only with %{public} format,
+// but Console.app filters can still be flaky — so we ALSO show a UIAlert on
+// first launch as a guaranteed-visible "dylib is alive" signal.
 __attribute__((constructor))
 static void KL_DylibLoaded(void) {
     KL_LOG("dylib loaded section=%ld", (long)KaiLiteSection);
 }
+
+// Visible diagnostic: shows a UIAlert the first time YT launches with our dylib
+// loaded. If the user sees the alert → dylib is loaded → Settings.x hooks are
+// installed (they're in the same .dylib). If they don't see it, the dylib
+// isn't loading in the current build.
+%hook YTAppDelegate
+- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+    BOOL result = %orig;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            UIWindow *keyWindow = nil;
+            for (UIScene *scene in [UIApplication sharedApplication].connectedScenes) {
+                if ([scene isKindOfClass:[UIWindowScene class]]) {
+                    for (UIWindow *w in ((UIWindowScene *)scene).windows) {
+                        if (w.isKeyWindow) { keyWindow = w; break; }
+                    }
+                    if (keyWindow) break;
+                }
+            }
+            UIViewController *root = keyWindow.rootViewController;
+            while (root.presentedViewController) root = root.presentedViewController;
+            UIAlertController *alert = [UIAlertController
+                alertControllerWithTitle:@"kai-lite loaded"
+                                 message:[NSString stringWithFormat:@"v0.1.0 — section %ld is registered.\nOpen Settings → Tweaks to verify.", (long)KaiLiteSection]
+                          preferredStyle:UIAlertControllerStyleAlert];
+            [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
+            [root presentViewController:alert animated:YES completion:nil];
+        });
+    });
+    return result;
+}
+%end
 
 // Categories supported by sponsor.ajay.app. Each maps to a settings key sb_cat_<name>.
 NSArray<NSString *> *KLSponsorCategoriesList(void) {

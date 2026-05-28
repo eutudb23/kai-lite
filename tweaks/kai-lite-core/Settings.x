@@ -58,6 +58,14 @@
     YTSettingsViewController *delegate = [self valueForKey:@"_dataDelegate"];
     KL_LOG("delegate=%{public}@ class=%{public}@", delegate, NSStringFromClass([delegate class]));
 
+    // Visible diagnostic — if the user sees this toast when opening Settings,
+    // our hook IS firing and the bug is purely in section rendering.
+    Class toastCls = %c(YTToastResponderEvent);
+    if (toastCls && delegate) {
+        NSString *msg = [NSString stringWithFormat:@"kai-lite Settings hook fired (delegate=%@)", NSStringFromClass([delegate class])];
+        [[toastCls eventWithMessage:msg firstResponder:delegate] send];
+    }
+
     YTSettingsSectionItem *enabled = [%c(YTSettingsSectionItem)
         switchItemWithTitle:LOC(@"Enabled")
            titleDescription:LOC(@"EnabledDesc")

@@ -48,6 +48,9 @@ NSArray<NSString *> *KLSponsorCategoriesList(void);
 - (void)send;
 @end
 
+@interface YTAppDelegate : UIResponder <UIApplicationDelegate>
+@end
+
 @interface YTSettingsSectionItemManager (KaiLite)
 - (void)updateKaiLiteSectionWithEntry:(id)entry;
 @end
