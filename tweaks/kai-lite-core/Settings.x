@@ -4,11 +4,30 @@
 
 %hook YTSettingsGroupData
 
+// Newer YouTube versions render the "Tweaks" sidebar group from +tweaks.
+// YTLitePlus uses this exact pattern; without it, sections only registered
+// via setSectionItems:forCategory: may not appear in the Tweaks group.
++ (NSMutableArray<NSNumber *> *)tweaks {
+    NSMutableArray<NSNumber *> *originalTweaks = %orig;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        if (![originalTweaks containsObject:@(KaiLiteSection)]) {
+            [originalTweaks addObject:@(KaiLiteSection)];
+            KL_LOG("+tweaks: appended kai-lite -> %{public}@", originalTweaks);
+        }
+    });
+    return originalTweaks;
+}
+
 - (NSArray<NSNumber *> *)orderedCategories {
-    if (self.type != 1 || class_getClassMethod(objc_getClass("YTSettingsGroupData"), @selector(tweaks)))
-        return %orig;
-    NSMutableArray *mutableCategories = %orig.mutableCopy;
+    NSArray<NSNumber *> *orig = %orig;
+    BOOL hasTweaksMethod = class_getClassMethod(objc_getClass("YTSettingsGroupData"), @selector(tweaks)) != NULL;
+    KL_LOG("orderedCategories type=%ld origCount=%lu hasTweaksMethod=%d", (long)self.type, (unsigned long)orig.count, hasTweaksMethod);
+    if (self.type != 1 || hasTweaksMethod)
+        return orig;
+    NSMutableArray *mutableCategories = orig.mutableCopy;
     [mutableCategories insertObject:@(KaiLiteSection) atIndex:0];
+    KL_LOG("orderedCategories INSERTED kai-lite at 0 -> %{public}@", mutableCategories);
     return mutableCategories.copy;
 }
 
@@ -18,6 +37,7 @@
 
 + (NSArray<NSNumber *> *)settingsCategoryOrder {
     NSArray<NSNumber *> *order = %orig;
+    KL_LOG("settingsCategoryOrder orig=%{public}@", order);
     NSUInteger insertIndex = [order indexOfObject:@(1)];
     if (insertIndex != NSNotFound) {
         NSMutableArray<NSNumber *> *mutableOrder = [order mutableCopy];
@@ -33,8 +53,10 @@
 
 %new(v@:@)
 - (void)updateKaiLiteSectionWithEntry:(id)entry {
+    KL_LOG("updateKaiLiteSectionWithEntry FIRED");
     NSMutableArray<YTSettingsSectionItem *> *items = [NSMutableArray array];
     YTSettingsViewController *delegate = [self valueForKey:@"_dataDelegate"];
+    KL_LOG("delegate=%{public}@ class=%{public}@", delegate, NSStringFromClass([delegate class]));
 
     YTSettingsSectionItem *enabled = [%c(YTSettingsSectionItem)
         switchItemWithTitle:LOC(@"Enabled")
@@ -77,6 +99,7 @@
 
 - (void)updateSectionForCategory:(NSUInteger)category withEntry:(id)entry {
     if (category == KaiLiteSection) {
+        KL_LOG("updateSectionForCategory category=%lu (OURS)", (unsigned long)category);
         [self updateKaiLiteSectionWithEntry:entry];
         return;
     }

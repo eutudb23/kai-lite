@@ -1,5 +1,11 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
+#import <os/log.h>
+
+// Diagnostic logging — uses %{public}@ markers so values survive iOS unified
+// log redaction (vanilla NSLog values come out as <private>). View on Mac via
+// Console.app or `idevicesyslog -u <udid> | grep kai-lite`.
+#define KL_LOG(fmt, ...) os_log(OS_LOG_DEFAULT, "[kai-lite] " fmt, ##__VA_ARGS__)
 
 #import <YouTubeHeader/YTSettingsSectionItem.h>
 #import <YouTubeHeader/YTSettingsSectionItemManager.h>

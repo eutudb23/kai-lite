@@ -1,5 +1,12 @@
 #import "Tweak.h"
 
+// Fires at dylib load. If the user sees this in the log, the dylib injected and
+// its constructors ran — confirming Settings.x hooks should also be installed.
+__attribute__((constructor))
+static void KL_DylibLoaded(void) {
+    KL_LOG("dylib loaded section=%ld", (long)KaiLiteSection);
+}
+
 // Categories supported by sponsor.ajay.app. Each maps to a settings key sb_cat_<name>.
 NSArray<NSString *> *KLSponsorCategoriesList(void) {
     static NSArray<NSString *> *cats = nil;
