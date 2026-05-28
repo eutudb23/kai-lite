@@ -1,4 +1,19 @@
 #import "Tweak.h"
+#import <YouTubeHeader/YTSettingsGroupData.h>
+
+// Current YouTube uses YTSettingsGroupData.orderedCategories as the live category
+// list. When YTABConfig is installed it manages ordering centrally (signalled by
+// the +tweaks class method), so we no-op in that case to avoid double-inserting.
+%hook YTSettingsGroupData
+- (NSArray<NSNumber *> *)orderedCategories {
+    if (self.type != 1 || class_getClassMethod(objc_getClass("YTSettingsGroupData"), @selector(tweaks)))
+        return %orig;
+    NSMutableArray *mutable = [%orig mutableCopy];
+    if (![mutable containsObject:@(KaiLiteSection)])
+        [mutable addObject:@(KaiLiteSection)];
+    return [mutable copy];
+}
+%end
 
 %hook YTAppSettingsPresentationData
 + (NSArray *)settingsCategoryOrder {
@@ -34,7 +49,11 @@
 %new(v@:@)
 - (void)updateKaiLiteSectionWithEntry:(id)entry {
     NSMutableArray<YTSettingsSectionItem *> *items = [NSMutableArray array];
-    YTSettingsViewController *settingsVC = [self valueForKey:@"_settingsViewControllerDelegate"];
+    // Current YouTube exposes the settings view controller via _dataDelegate.
+    // Older builds called it _settingsViewControllerDelegate — fall back if the
+    // primary key returns nil so the tweak works across versions.
+    YTSettingsViewController *settingsVC = [self valueForKey:@"_dataDelegate"];
+    if (!settingsVC) settingsVC = [self valueForKey:@"_settingsViewControllerDelegate"];
 
     // Top-level: SponsorBlock entry (pushes a picker with the sub-settings).
     YTSettingsSectionItem *sponsor = [%c(YTSettingsSectionItem)
