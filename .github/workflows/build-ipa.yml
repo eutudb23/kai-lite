@@ -67,6 +67,10 @@ on:
         description: "YTSideload (fixes logout-on-relaunch)"
         type: boolean
         default: true
+      enable_isponsorblock:
+        description: "iSponsorBlock (skip sponsor segments — auto-bundles Alderis)"
+        type: boolean
+        default: true
 
 concurrency:
   group: build-ipa-${{ github.ref }}
@@ -88,7 +92,7 @@ jobs:
       - name: Mask sensitive inputs
         uses: levibostian/action-hide-sensitive-inputs@1.2.0
         with:
-          exclude_inputs: bundle_id,app_name,publish_release,build_trollfools_companion,enable_safari_extension,enable_youtube_x,enable_youpip,enable_ytuhd,enable_youquality,enable_return_youtube_dislikes,enable_ytabconfig,enable_ytvideooverlay,enable_donteatmycontent,enable_ytsideload
+          exclude_inputs: bundle_id,app_name,publish_release,build_trollfools_companion,enable_safari_extension,enable_youtube_x,enable_youpip,enable_ytuhd,enable_youquality,enable_return_youtube_dislikes,enable_ytabconfig,enable_ytvideooverlay,enable_donteatmycontent,enable_ytsideload,enable_isponsorblock
 
       - id: compute
         env:
@@ -101,6 +105,7 @@ jobs:
           ENABLE_YTVIDEOOVERLAY:          ${{ inputs.enable_ytvideooverlay }}
           ENABLE_DONTEATMYCONTENT:        ${{ inputs.enable_donteatmycontent }}
           ENABLE_YTSIDELOAD:              ${{ inputs.enable_ytsideload }}
+          ENABLE_ISPONSORBLOCK:           ${{ inputs.enable_isponsorblock }}
           ENABLE_SAFARI_EXTENSION:        ${{ inputs.enable_safari_extension }}
         run: |
           # Single source of truth: tweaks.json names. build_all_tweaks.sh renames
@@ -118,6 +123,10 @@ jobs:
             NAMES+=("YTABConfig")
           fi
           [[ "$ENABLE_DONTEATMYCONTENT"        == "true" ]] && NAMES+=("DontEatMyContent")
+          if [[ "$ENABLE_ISPONSORBLOCK" == "true" ]]; then
+            NAMES+=("Alderis")            # link-time dep (libcolorpicker) of iSponsorBlock
+            NAMES+=("iSponsorBlock")
+          fi
           [[ "$ENABLE_YTSIDELOAD"              == "true" ]] && NAMES+=("YTSideload")
           [[ "$ENABLE_SAFARI_EXTENSION"        == "true" ]] && NAMES+=("OpenYouTubeSafariExtension")
 
@@ -149,7 +158,7 @@ jobs:
       - name: Mask sensitive inputs
         uses: levibostian/action-hide-sensitive-inputs@1.2.0
         with:
-          exclude_inputs: bundle_id,app_name,publish_release,build_trollfools_companion,enable_safari_extension,enable_youtube_x,enable_youpip,enable_ytuhd,enable_youquality,enable_return_youtube_dislikes,enable_ytabconfig,enable_ytvideooverlay,enable_donteatmycontent,enable_ytsideload
+          exclude_inputs: bundle_id,app_name,publish_release,build_trollfools_companion,enable_safari_extension,enable_youtube_x,enable_youpip,enable_ytuhd,enable_youquality,enable_return_youtube_dislikes,enable_ytabconfig,enable_ytvideooverlay,enable_donteatmycontent,enable_ytsideload,enable_isponsorblock
 
       - uses: actions/checkout@v6
 

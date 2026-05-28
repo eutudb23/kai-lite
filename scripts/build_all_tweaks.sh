@@ -64,6 +64,24 @@ jq -c "$filter_expr" "$MANIFEST" | while read -r entry; do
     continue
   fi
 
+  url=$(jq -r '.url // empty' <<<"$entry")
+  if [[ -n "$url" ]]; then
+    sha=$(jq -r '.sha256 // empty' <<<"$entry")
+    echo "::group::Download $name ($url)"
+    tmp=$(mktemp -d)
+    curl -L --fail --silent --show-error -o "$tmp/pkg.deb" "$url"
+    if [[ -n "$sha" ]]; then
+      actual=$(shasum -a 256 "$tmp/pkg.deb" | awk '{print $1}')
+      if [[ "$actual" != "$sha" ]]; then
+        echo "::error::SHA256 mismatch for $name: expected $sha, got $actual"; exit 1
+      fi
+    fi
+    cp "$tmp/pkg.deb" "$OUT_DIR/${name}.deb"
+    rm -rf "$tmp"
+    echo "::endgroup::"
+    continue
+  fi
+
   sparse=$(jq -r '.sparse // empty' <<<"$entry")
   if [[ -n "$sparse" ]]; then
     repo=$(jq -r '.repo' <<<"$entry")
