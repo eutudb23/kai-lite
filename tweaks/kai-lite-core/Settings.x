@@ -4,13 +4,19 @@
 
 #pragma mark - Helpers
 
-// Builds a sub-section picker push action. Strong-self capture matches the
-// proven YTLite/RYD pattern — avoiding the weakSelf+block-parameter combo
-// that crashes (nil rows inside @[] literal).
+// Sub-page navigation — matches YTABConfig exactly.
+//
+// The KEY insight: YTSettingsSectionItemManager has TWO ivars that both look
+// like YTSettingsViewController, but they serve different roles:
+//   • _dataDelegate                  — registers sections (setSectionItems:…)
+//   • _settingsViewControllerDelegate — navigates sub-pages (pushViewController:)
+//
+// They're not interchangeable. _dataDelegate has no navigationController, so
+// pushing onto it triggers EXC_BAD_ACCESS (not catchable by @try). Always use
+// _settingsViewControllerDelegate for the push.
 #define KL_PUSH_PICKER(titleKey, rowsExpr) \
     selectBlock:^BOOL(YTSettingsCell *cell, NSUInteger arg1) { \
-        YTSettingsViewController *vc = [self valueForKey:@"_dataDelegate"]; \
-        if (!vc) vc = [self valueForKey:@"_settingsViewControllerDelegate"]; \
+        YTSettingsViewController *settingsViewController = [self valueForKey:@"_settingsViewControllerDelegate"]; \
         NSArray<YTSettingsSectionItem *> *rows = rowsExpr; \
         YTSettingsPickerViewController *picker = [[%c(YTSettingsPickerViewController) alloc] \
             initWithNavTitle:LOC(titleKey) \
@@ -18,7 +24,7 @@
                         rows:rows \
            selectedItemIndex:NSNotFound \
              parentResponder:[self parentResponder]]; \
-        [vc pushViewController:picker]; \
+        [settingsViewController pushViewController:picker]; \
         return YES; \
     }
 
