@@ -22,9 +22,12 @@
         return YES; \
     }
 
+// Uses the `itemWithTitle:accessibilityIdentifier:detailTextBlock:selectBlock:`
+// variant (NOT the titleDescription one) — that's the one whose detailTextBlock
+// param is typed as a BLOCK. The titleDescription variant types it as (id) and
+// crashes if you pass a block.
 #define KL_NAV_ITEM(titleKey, rowsExpr) \
     [%c(YTSettingsSectionItem) itemWithTitle:LOC(titleKey) \
-                          titleDescription:nil \
                    accessibilityIdentifier:@"KaiLiteSectionItem" \
                            detailTextBlock:^NSString *() { return @"›"; } \
                                KL_PUSH_PICKER(titleKey, rowsExpr)]
