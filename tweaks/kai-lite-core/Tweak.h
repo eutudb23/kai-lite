@@ -45,7 +45,6 @@ NSArray<NSString *> *KLSponsorCategoriesList(void);
 @interface YTSettingsSectionItemManager (KaiLite)
 - (void)updateKaiLiteSectionWithEntry:(id)entry;
 - (YTSettingsSectionItem *)kl_switchWithTitle:(NSString *)titleKey key:(NSString *)key;
-- (YTSettingsSectionItem *)kl_navItemWithTitle:(NSString *)titleKey rowsBuilder:(NSArray<YTSettingsSectionItem *> *(^)(void))rowsBuilder;
 @end
 
 @interface YTAppSettingsPresentationData : NSObject
