@@ -12,6 +12,6 @@ include $(THEOS)/makefiles/common.mk
 TWEAK_NAME = KaiLiteCore
 
 KaiLiteCore_FILES   = Tweak.x Settings.x Utils/NSBundle+KL.m Utils/KLUserDefaults.m
-KaiLiteCore_CFLAGS  = -fobjc-arc
+KaiLiteCore_CFLAGS  = -fobjc-arc -Wno-deprecated-declarations
 
 include $(THEOS_MAKE_PATH)/tweak.mk
