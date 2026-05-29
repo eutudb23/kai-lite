@@ -1,43 +1,187 @@
+/* ===================================================================
+   kai-lite Core — English localization
+   =================================================================== */
+
 /* Root menu */
-"KaiLite" = "kai-lite";
+"KaiLite"     = "kai-lite";
 "KaiLiteDesc" = "Settings for the kai-lite YouTube IPA.";
 
-/* SponsorBlock menu */
-"SponsorBlock" = "SponsorBlock";
-"SponsorBlockDesc" = "Automatically skip non-content segments using sponsor.ajay.app.";
-"Enabled" = "Enabled";
-"EnabledDesc" = "Enable the SponsorBlock segment-skipping extension.";
+/* ---------- Section titles ---------- */
+"Downloading"   = "Downloading";
+"NavigationBar" = "Navigation bar";
+"Feed"          = "Feed";
+"Player"        = "Player";
+"Shorts"        = "Shorts";
+"TabBar"        = "Tab bar";
+"Interface"     = "Interface";
+"SponsorBlock"  = "SponsorBlock";
 
-/* Categories */
-"Categories" = "Categories";
-"CategoriesDesc" = "Which segment categories to skip.";
-"Cat_sponsor" = "Sponsor";
-"Cat_sponsorDesc" = "Paid promotion, paid referrals and direct advertisements.";
-"Cat_selfpromo" = "Unpaid self promotion";
-"Cat_selfpromoDesc" = "Similar to sponsor, but for unpaid or self promotion (merch, charity, …).";
-"Cat_interaction" = "Interaction reminder";
-"Cat_interactionDesc" = "Short reminders to like, subscribe, or follow.";
-"Cat_intro" = "Intro / intermission";
-"Cat_introDesc" = "Intervals without actual content (animation, pause, looping music).";
-"Cat_outro" = "Endcards / credits";
-"Cat_outroDesc" = "Credits or outro animations at the end of a video.";
-"Cat_preview" = "Preview / recap";
-"Cat_previewDesc" = "Recaps or previews of other parts of the video.";
-"Cat_music_offtopic" = "Music: non-music section";
-"Cat_music_offtopicDesc" = "Non-music sections of music videos.";
-"Cat_filler" = "Filler tangent";
-"Cat_fillerDesc" = "Tangential scenes added only for filler.";
+/* ---------- Downloading ---------- */
+"DownloadManager"     = "Download manager";
+"DownloadManagerDesc" = "Replaces 'Download' button action under the player with a Download Manager.";
+"SavePostInfo"        = "Save post information";
+"SavePostInfoDesc"    = "Allows to copy post text and save post as image by long tap.";
+"SaveProfilePic"      = "Save profile picture";
+"SaveProfilePicDesc"  = "Saves profile picture to the Photos app by long tap.";
+"SaveCommentInfo"     = "Save comment information";
+"SaveCommentInfoDesc" = "Allows to copy comment text and save comment as image by long tap.";
+"PreferStableVolume"  = "Prefer stable volume";
+"PreferStableVolumeDesc" = "Prioritize audio with stable volume (Dynamic Range Compression) if available.";
+"EmbedThumbnails"     = "Embed thumbnails";
+"EmbedThumbnailsDesc" = "Embeds the video's thumbnail as its metadata thumbnail.";
+"EmbedCaptions"       = "Embed captions";
+"EmbedCaptionsDesc"   = "Embeds the selected captions track into downloaded videos.";
 
-/* Behavior */
-"Behavior" = "Behavior";
-"BehaviorDesc" = "What to do when a segment is detected.";
-"Skip" = "Skip automatically";
-"Ask" = "Ask before skipping";
+/* ---------- Navigation bar ---------- */
+"HideCastButton"          = "Hide Cast button";
+"HideCastButtonDesc"      = "Hides Cast button from the Navigation bar.";
+"HideNotificationsButton" = "Hide Notifications button";
+"HideNotificationsButtonDesc" = "Hides Notifications button from the Navigation bar.";
+"HideSearchButton"        = "Hide Search button";
+"HideSearchButtonDesc"    = "Hides Search button from the Navigation bar.";
+"HideVoiceSearchButton"   = "Hide Voice search button";
+"HideVoiceSearchButtonDesc" = "Hides Voice search button from the Navigation bar.";
+"StickyNavigationBar"     = "Sticky Navigation bar";
+"StickyNavigationBarDesc" = "Pins the Navigation bar so that it remains visible when scrolling.";
+"HideSubbar"              = "Hide Subbar";
+"HideSubbarDesc"          = "Hides the Subbar (All, New to you, Live, etc.) under the Navigation bar.";
+"RemoveYouTubeLogo"       = "Remove YouTube logo";
+"RemoveYouTubeLogoDesc"   = "Removes the YouTube logo in the Navigation bar.";
+"SetPremiumLogo"          = "Set Premium YouTube logo";
+"SetPremiumLogoDesc"      = "Sets the Premium YouTube logo in the Navigation bar.";
 
-/* Notification duration */
-"NotificationDuration" = "Notification duration";
-"NotificationDurationDesc" = "How long the skipped-segment toast stays visible.";
+/* ---------- Feed ---------- */
+"RemoveAds"               = "Remove ads";
+"RemoveAdsDesc"           = "Removes in-app ads.";
+"HideShortsVideos"        = "Hide Shorts videos";
+"HideShortsVideosDesc"    = "Hides Shorts videos from Homepage, Recommended, etc.";
+"KeepShortsInSubs"        = "Keep Shorts in Subscriptions";
+"KeepShortsInSubsDesc"    = "Prevents removing Shorts from the Subscriptions tab.";
+"RemoveMoreTopics"        = "Remove \"More topics\"";
+"RemoveMoreTopicsDesc"    = "Removes \"More topics\" from the feed.";
+"RemoveCommunityPosts"    = "Remove community posts";
+"RemoveCommunityPostsDesc"= "Removes community posts from the feed.";
+"RemoveMixes"             = "Remove mixes";
+"RemoveMixesDesc"         = "Removes mix playlists generated by YouTube from the feed.";
+"RemoveLiveVideos"        = "Remove Live videos";
+"RemoveLiveVideosDesc"    = "Removes Live videos from the Home tab.";
+"RemoveHorizontalFeeds"   = "Remove horizontal feeds";
+"RemoveHorizontalFeedsDesc" = "Removes all horizontal feeds (News, Continue Watching, Posts collection, etc.) from the Home tab.";
+"RemovePlayables"         = "Remove playables";
+"RemovePlayablesDesc"     = "Removes playables (mini-games) from the feed.";
+"FixCovers"               = "Fix covers";
+"FixCoversDesc"           = "Fixes the display of covers for users from Russia.";
 
-/* Toast messages */
-"SegmentSkipped" = "Segment skipped";
-"SponsorBlockReady" = "SponsorBlock ready";
+/* ---------- Player ---------- */
+"IgnoreAutoDubbed"        = "Ignore auto-dubbed tracks";
+"IgnoreAutoDubbedDesc"    = "Skips manual selection if the preferred language track is auto-dubbed.";
+"AutoGeneratedCaptions"   = "Auto-generated captions";
+"AutoGeneratedCaptionsDesc" = "Falls back to a translation of original or auto-generated captions when the selected captions are not found.";
+"SpeedControls"           = "Speed controls";
+"SpeedControlsDesc"       = "Displays speed control buttons on overlay.";
+"MuteButton"              = "Mute button";
+"MuteButtonDesc"          = "Displays a button to mute or unmute the volume on the overlay.";
+"LockButton"              = "Lock button";
+"LockButtonDesc"          = "Displays a button to quickly lock the overlay screen and switch to fullscreen mode.";
+"HideAutoplaySwitch"      = "Hide Autoplay switch";
+"HideAutoplaySwitchDesc"  = "Hides Autoplay switch from the overlay.";
+"HideSubtitlesButton"     = "Hide Subtitles button";
+"HideSubtitlesButtonDesc" = "Hides Subtitles button from the overlay.";
+"HidePrevNextButtons"     = "Hide Previous and Next buttons";
+"HidePrevNextButtonsDesc" = "Hides Previous and Next video buttons from overlay.";
+"FastForwardRewind"       = "Fast forward and Rewind buttons";
+"FastForwardRewindDesc"   = "Replaces Previous and Next video buttons with Fast forward and Rewind buttons in overlay.";
+"RememberLoopMode"        = "Remember loop mode";
+"RememberLoopModeDesc"    = "Remembers the last selected loop mode in the player menu.";
+"PortraitFullscreen"      = "Portrait fullscreen mode";
+"PortraitFullscreenDesc"  = "Enables portrait fullscreen mode support.";
+"ClassicVideoQuality"     = "Classic video quality";
+"ClassicVideoQualityDesc" = "Brings back classic video quality selection menu.";
+"ExtraSpeedOptions"       = "Extra speed options";
+"ExtraSpeedOptionsDesc"   = "Adds more video playback speed options to the player menu.";
+"RemoveDarkBackground"    = "Remove dark background";
+"RemoveDarkBackgroundDesc"= "Removes overlay dark background.";
+"HideEndScreens"          = "Hide End screens hover cards";
+"HideEndScreensDesc"      = "Hides End screens (thumbnails) at the end of videos.";
+"HideAutoPlayEnd"         = "Hide auto-play end screen";
+"HideAutoPlayEndDesc"     = "Hides the screen that shows what to play next after playback ended. Also disables auto-play.";
+"DisableFullscreenActions" = "Disable fullscreen actions";
+"DisableFullscreenActionsDesc" = "Disables actions panel in fullscreen mode.";
+"DisableSnackbars"        = "Disable snackbars";
+"DisableSnackbarsDesc"    = "Prevents YouTube from showing on-screen HUD messages.";
+"PersistentProgressBar"   = "Persistent progress bar";
+"PersistentProgressBarDesc" = "Always shows progress bar in the player.";
+"StockVolumeHUD"          = "Stock volume HUD";
+"StockVolumeHUDDesc"      = "Displays system volume HUD in fullscreen.";
+"NoRelatedInOverlay"      = "No related videos in overlay";
+"NoRelatedInOverlayDesc"  = "Removes related videos displayed in the overlay by long-pressing the player.";
+
+/* ---------- Shorts ---------- */
+"ShortsOnlyMode"          = "Shorts only mode";
+"ShortsOnlyModeDesc"      = "Limits YouTube functionality to viewing Shorts only.";
+"LimitShorts"             = "Limit Shorts";
+"LimitShortsDesc"         = "Limits the number of Shorts in the feed to 10-15.";
+"ShortsEnableProgress"    = "Enable progress bar";
+"ShortsEnableProgressDesc"= "Displays progress bar in the Shorts overlay.";
+"ShortsSpeedUp"           = "Increase Shorts playback rate";
+"ShortsSpeedUpDesc"       = "Allows to speed up playback by long pressing on a certain part of the screen.";
+"PinchToFullscreen"       = "Pinch to Fullscreen";
+"PinchToFullscreenDesc"   = "Manages visibility of the overlay with pinch in and pinch out gestures.";
+"ShortsToRegular"         = "Shorts to regular videos";
+"ShortsToRegularDesc"     = "Opens Shorts videos as regular videos.";
+"ShortsRemoveLive"        = "Remove live videos";
+"ShortsRemoveLiveDesc"    = "Removes live videos from the feed.";
+"HideShortsLogo"          = "Hide Shorts logo";
+"HideShortsLogoDesc"      = "Hides Shorts logo in the top left corner.";
+"ShortsHideSearch"        = "Hide Search button";
+"ShortsHideSearchDesc"    = "Hides Search button from the Shorts overlay.";
+
+/* ---------- Tab bar ---------- */
+"TranslucentTabBar"       = "Translucent tab bar";
+"TranslucentTabBarDesc"   = "Makes the tab bar translucent.";
+"RemoveTabLabels"         = "Remove tab labels";
+"RemoveTabLabelsDesc"     = "Removes the labels under tab icons.";
+"RemoveTabIndicators"     = "Remove tab indicators";
+"RemoveTabIndicatorsDesc" = "Removes the indicators under tab icons.";
+
+/* ---------- Interface ---------- */
+"OledTheme"               = "Oled theme";
+"OledThemeDesc"           = "Turns all dark colors to black.";
+"OledKeyboard"            = "Oled keyboard";
+"OledKeyboardDesc"        = "Applies oled black theme for dark keyboard.";
+"HideSearchHistory"       = "Hide search history";
+"HideSearchHistoryDesc"   = "Visually hides search history and suggestions.";
+"RemoveGuidelines"        = "Remove guidelines";
+"RemoveGuidelinesDesc"    = "Removes pinned guidelines from the comments section.";
+"StickCommentsHeader"     = "Stick comments header";
+"StickCommentsHeaderDesc" = "Pins sort comments header (Top, Newest) so that it won't disappear while scrolling.";
+"HideCommentsHeader"      = "Hide comments header";
+"HideCommentsHeaderDesc"  = "Hides sort comments header (Top, Newest) so it will never appear.";
+"OldPlaylistMinibar"      = "Old playlist minibar";
+"OldPlaylistMinibarDesc"  = "Replaces the new floating playlist panel with the old one.";
+"DisableRTL"              = "Disable RTL formatting";
+"DisableRTLDesc"          = "Forcefully displays text in left-to-right (LTR) format for languages that are initially displayed in right-to-left (RTL).";
+
+/* ---------- SponsorBlock ---------- */
+"SponsorBlockDesc"        = "Automatically skip non-content segments using sponsor.ajay.app.";
+"Enabled"                 = "Enabled";
+"EnabledDesc"             = "Enable the SponsorBlock segment-skipping extension.";
+
+"Cat_sponsor"             = "Sponsor";
+"Cat_sponsorDesc"         = "Paid promotion, paid referrals and direct advertisements.";
+"Cat_selfpromo"           = "Unpaid self promotion";
+"Cat_selfpromoDesc"       = "Similar to sponsor, but for unpaid or self promotion (merch, charity, …).";
+"Cat_interaction"         = "Interaction reminder";
+"Cat_interactionDesc"     = "Short reminders to like, subscribe, or follow.";
+"Cat_intro"               = "Intro / intermission";
+"Cat_introDesc"           = "Intervals without actual content (animation, pause, looping music).";
+"Cat_outro"               = "Endcards / credits";
+"Cat_outroDesc"           = "Credits or outro animations at the end of a video.";
+"Cat_preview"             = "Preview / recap";
+"Cat_previewDesc"         = "Recaps or previews of other parts of the video.";
+"Cat_music_offtopic"      = "Music: non-music section";
+"Cat_music_offtopicDesc"  = "Non-music sections of music videos.";
+"Cat_filler"              = "Filler tangent";
+"Cat_fillerDesc"          = "Tangential scenes added only for filler.";
+
+"SegmentSkipped"          = "Segment skipped";

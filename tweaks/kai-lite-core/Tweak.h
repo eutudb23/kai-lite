@@ -1,11 +1,5 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
-#import <os/log.h>
-
-// Diagnostic logging — uses %{public}@ markers so values survive iOS unified
-// log redaction (vanilla NSLog values come out as <private>). View on Mac via
-// Console.app or `idevicesyslog -u <udid> | grep kai-lite`.
-#define KL_LOG(fmt, ...) os_log(OS_LOG_DEFAULT, "[kai-lite] " fmt, ##__VA_ARGS__)
 
 #import <YouTubeHeader/YTSettingsSectionItem.h>
 #import <YouTubeHeader/YTSettingsSectionItemManager.h>
@@ -24,15 +18,15 @@
 
 #define klBool(key)         [[KLUserDefaults standardUserDefaults] boolForKey:key]
 #define klInt(key)          [[KLUserDefaults standardUserDefaults] integerForKey:key]
+#define klStr(key)          [[KLUserDefaults standardUserDefaults] stringForKey:key]
 #define klSetBool(v, key)   [[KLUserDefaults standardUserDefaults] setBool:(v) forKey:key]
 #define klSetInt(v, key)    [[KLUserDefaults standardUserDefaults] setInteger:(v) forKey:key]
+#define klSetStr(v, key)    [[KLUserDefaults standardUserDefaults] setObject:(v) forKey:key]
 
-// kai-lite owns settings category 999 in YouTube's Settings UI. Matches
-// the low-number range used by every working PoomSmart tweak (YouPiP=200,
-// YTABC=404, RYD=1080) — large IDs are not rendered on current YouTube.
+// kai-lite owns settings category 999 in YouTube's Settings UI.
 static const NSInteger KaiLiteSection = 999;
 
-// SponsorBlock category list (implemented in Tweak.x). Order matters for the settings UI.
+// SponsorBlock category list (implemented in Tweak.x).
 NSArray<NSString *> *KLSponsorCategoriesList(void);
 
 @interface YTPlayerViewController : UIViewController
@@ -48,11 +42,10 @@ NSArray<NSString *> *KLSponsorCategoriesList(void);
 - (void)send;
 @end
 
-@interface YTAppDelegate : UIResponder <UIApplicationDelegate>
-@end
-
 @interface YTSettingsSectionItemManager (KaiLite)
 - (void)updateKaiLiteSectionWithEntry:(id)entry;
+- (YTSettingsSectionItem *)kl_switchWithTitle:(NSString *)titleKey key:(NSString *)key;
+- (YTSettingsSectionItem *)kl_navItemWithTitle:(NSString *)titleKey rowsBuilder:(NSArray<YTSettingsSectionItem *> *(^)(void))rowsBuilder;
 @end
 
 @interface YTAppSettingsPresentationData : NSObject
