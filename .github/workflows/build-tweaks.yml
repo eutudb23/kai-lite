@@ -55,6 +55,11 @@ jobs:
         run: |
           # macos-14 preinstalls jq/gh/xz/coreutils, but /usr/bin/make is GNU Make 3.81 (too old
           # for Theos's parallel build). Install the brew formula and front-load gnubin on PATH.
+          # GitHub's runner image may retain aws/tap, which this workflow does not use. Remove it
+          # instead of trusting an unrelated third-party tap or disabling Homebrew's trust checks.
+          if brew tap | grep -qx 'aws/tap'; then
+            brew untap aws/tap
+          fi
           brew update
           brew install ldid dpkg make
           echo "$(brew --prefix make)/libexec/gnubin" >> "$GITHUB_PATH"
