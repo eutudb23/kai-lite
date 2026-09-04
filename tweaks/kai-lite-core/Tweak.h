@@ -7,6 +7,10 @@
 #import <YouTubeHeader/YTSettingsPickerViewController.h>
 #import <YouTubeHeader/YTSettingsCell.h>
 #import <YouTubeHeader/YTUIUtils.h>
+#import <YouTubeHeader/MLFormat.h>
+#import <YouTubeHeader/MLQuickMenuVideoQualitySettingFormatConstraint.h>
+#import <YouTubeHeader/YTPlayerViewController.h>
+#import <YouTubeHeader/YTSingleVideoController.h>
 
 #import "Utils/NSBundle+KL.h"
 #import "Utils/KLUserDefaults.h"
@@ -29,12 +33,17 @@ static const NSInteger KaiLiteSection = 999;
 // SponsorBlock category list (implemented in Tweak.x).
 NSArray<NSString *> *KLSponsorCategoriesList(void);
 
-@interface YTPlayerViewController : UIViewController
+// Shared quality choices for the Wi-Fi and mobile selectors.
+NSArray<NSString *> *KLQualityLabels(void);
+
+@interface YTPlayerViewController (KaiLite)
 @property (nonatomic, strong) NSMutableDictionary *kl_sbSegments;
-- (void)seekToTime:(CGFloat)time;
-- (NSString *)currentVideoID;
-- (CGFloat)currentVideoMediaTime;
 - (void)kl_skipIfInSegment;
+- (void)kl_applyConfiguredQuality;
+@end
+
+@interface YTSingleVideoController (KaiLiteQuality)
+- (void)setVideoFormatConstraint:(id)formatConstraint;
 @end
 
 @interface YTToastResponderEvent : NSObject
@@ -45,6 +54,7 @@ NSArray<NSString *> *KLSponsorCategoriesList(void);
 @interface YTSettingsSectionItemManager (KaiLite)
 - (void)updateKaiLiteSectionWithEntry:(id)entry;
 - (YTSettingsSectionItem *)kl_switchWithTitle:(NSString *)titleKey key:(NSString *)key;
+- (YTSettingsSectionItem *)kl_qualityItemWithTitle:(NSString *)titleKey key:(NSString *)key;
 @end
 
 @interface YTAppSettingsPresentationData : NSObject

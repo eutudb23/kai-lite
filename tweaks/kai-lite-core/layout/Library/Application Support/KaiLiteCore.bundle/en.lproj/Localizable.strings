@@ -116,6 +116,15 @@
 "NoRelatedInOverlay"      = "No related videos in overlay";
 "NoRelatedInOverlayDesc"  = "Removes related videos displayed in the overlay by long-pressing the player.";
 
+/* ---------- Quality ---------- */
+"PlaybackQualityOnWiFi"       = "Quality on Wi-Fi";
+"PlaybackQualityOnWiFiDesc"   = "Automatically applies the selected quality when streaming over Wi-Fi.";
+"PlaybackQualityOnMobile"     = "Quality on mobile data";
+"PlaybackQualityOnMobileDesc" = "Automatically applies the selected quality when streaming over mobile data.";
+"SelectQuality"               = "Select quality";
+"Default"                     = "Default";
+"Best"                        = "Best";
+
 /* ---------- Shorts ---------- */
 "ShortsOnlyMode"          = "Shorts only mode";
 "ShortsOnlyModeDesc"      = "Limits YouTube functionality to viewing Shorts only.";

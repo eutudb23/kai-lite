@@ -1,4 +1,52 @@
 #import "Tweak.h"
+#import <SystemConfiguration/SystemConfiguration.h>
+#import <netinet/in.h>
+#import <stdlib.h>
+#import <string.h>
+
+NSArray<NSString *> *KLQualityLabels(void) {
+    static NSArray<NSString *> *labels = nil;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        labels = @[
+            @"Default",
+            @"Best",
+            @"2160p60",
+            @"2160p",
+            @"1440p60",
+            @"1440p",
+            @"1080p60",
+            @"1080p",
+            @"720p60",
+            @"720p",
+            @"480p",
+            @"360p",
+            @"240p",
+            @"144p",
+        ];
+    });
+    return labels;
+}
+
+static BOOL KLIsUsingWiFi(void) {
+    struct sockaddr_in address;
+    memset(&address, 0, sizeof(address));
+    address.sin_len = sizeof(address);
+    address.sin_family = AF_INET;
+
+    SCNetworkReachabilityRef reachability = SCNetworkReachabilityCreateWithAddress(NULL, (const struct sockaddr *)&address);
+    if (reachability == NULL) return NO;
+
+    SCNetworkReachabilityFlags flags = 0;
+    BOOL gotFlags = SCNetworkReachabilityGetFlags(reachability, &flags);
+    CFRelease(reachability);
+    if (!gotFlags) return NO;
+
+    BOOL reachable = (flags & kSCNetworkReachabilityFlagsReachable) != 0;
+    BOOL connectionRequired = (flags & kSCNetworkReachabilityFlagsConnectionRequired) != 0;
+    BOOL cellular = (flags & kSCNetworkReachabilityFlagsIsWWAN) != 0;
+    return reachable && !connectionRequired && !cellular;
+}
 
 // Categories supported by sponsor.ajay.app. Each maps to a settings key sb_cat_<name>.
 NSArray<NSString *> *KLSponsorCategoriesList(void) {
@@ -69,6 +117,70 @@ static NSString *KLEnabledCategoriesParam(void) {
             self.kl_sbSegments[@"flags"] = skipFlags;
         }
     }] resume];
+}
+
+- (void)loadWithPlayerTransition:(id)transition playbackConfig:(id)playbackConfig {
+    %orig;
+
+    NSString *qualityKey = KLIsUsingWiFi() ? @"wiFiQualityIndex" : @"cellQualityIndex";
+    if (klInt(qualityKey) != 0) {
+        [self performSelector:@selector(kl_applyConfiguredQuality) withObject:nil afterDelay:1.0];
+    }
+}
+
+%new
+- (void)kl_applyConfiguredQuality {
+    if (![self.view.superview isKindOfClass:NSClassFromString(@"YTWatchView")]) return;
+
+    NSString *qualityKey = KLIsUsingWiFi() ? @"wiFiQualityIndex" : @"cellQualityIndex";
+    NSInteger selectedIndex = klInt(qualityKey);
+    NSArray<NSString *> *qualityLabels = KLQualityLabels();
+    if (selectedIndex <= 0 || selectedIndex >= (NSInteger)qualityLabels.count) return;
+
+    NSString *targetQualityLabel = qualityLabels[selectedIndex];
+    NSInteger targetResolution = targetQualityLabel.integerValue;
+    YTSingleVideoController *activeVideo = (YTSingleVideoController *)self.activeVideo;
+    if (![activeVideo respondsToSelector:@selector(selectableVideoFormats)] ||
+        ![activeVideo respondsToSelector:@selector(setVideoFormatConstraint:)]) return;
+
+    MLFormat *closestFormat = nil;
+    NSInteger closestDifference = selectedIndex == 1 ? -1 : NSIntegerMax;
+
+    for (MLFormat *format in activeVideo.selectableVideoFormats) {
+        if (selectedIndex == 1) {
+            NSInteger resolution = format.singleDimensionResolution;
+            if (resolution > closestDifference) {
+                closestDifference = resolution;
+                closestFormat = format;
+            }
+            continue;
+        }
+
+        if ([format.qualityLabel isEqualToString:targetQualityLabel]) {
+            closestFormat = format;
+            break;
+        }
+
+        NSInteger resolution = format.singleDimensionResolution;
+        if (resolution <= 0 || format.qualityLabel.length == 0) continue;
+
+        NSInteger difference = labs(resolution - targetResolution);
+        if (difference < closestDifference) {
+            closestDifference = difference;
+            closestFormat = format;
+        }
+    }
+
+    if (closestFormat == nil) return;
+
+    Class constraintClass = %c(MLQuickMenuVideoQualitySettingFormatConstraint);
+    if (constraintClass == Nil) return;
+
+    MLQuickMenuVideoQualitySettingFormatConstraint *constraint = [[constraintClass alloc] init];
+    if ([constraint respondsToSelector:@selector(initWithVideoQualitySetting:formatSelectionReason:qualityLabel:)]) {
+        constraint = [constraint initWithVideoQualitySetting:3 formatSelectionReason:2 qualityLabel:closestFormat.qualityLabel];
+        [activeVideo setVideoFormatConstraint:constraint];
+    }
 }
 
 - (void)singleVideo:(id)video currentVideoTimeDidChange:(id)time {

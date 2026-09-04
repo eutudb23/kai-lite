@@ -20,7 +20,8 @@
 - (NSArray<NSNumber *> *)orderedCategories {
     if (self.type != 1 || class_getClassMethod(objc_getClass("YTSettingsGroupData"), @selector(tweaks)))
         return %orig;
-    NSMutableArray *mutableCategories = %orig.mutableCopy;
+    NSArray<NSNumber *> *originalCategories = %orig;
+    NSMutableArray<NSNumber *> *mutableCategories = [originalCategories mutableCopy];
     [mutableCategories insertObject:@(KaiLiteSection) atIndex:0];
     return mutableCategories.copy;
 }
@@ -68,6 +69,48 @@
                     return YES;
                 }
               settingItemId:0];
+}
+
+%new
+- (YTSettingsSectionItem *)kl_qualityItemWithTitle:(NSString *)titleKey key:(NSString *)key {
+    NSArray<NSString *> *qualityLabels = KLQualityLabels();
+    YTSettingsViewController *settingsViewController = [self valueForKey:@"_settingsViewControllerDelegate"];
+
+    return [%c(YTSettingsSectionItem)
+        itemWithTitle:LOC(titleKey)
+        accessibilityIdentifier:@"KaiLiteSectionItem"
+        detailTextBlock:^NSString *() {
+            NSInteger selectedIndex = klInt(key);
+            if (selectedIndex < 0 || selectedIndex >= (NSInteger)qualityLabels.count) selectedIndex = 0;
+            NSString *qualityLabel = qualityLabels[selectedIndex];
+            return selectedIndex < 2 ? LOC(qualityLabel) : qualityLabel;
+        }
+        selectBlock:^BOOL (YTSettingsCell *cell, NSUInteger arg1) {
+            NSMutableArray<YTSettingsSectionItem *> *rows = [NSMutableArray array];
+            for (NSUInteger index = 0; index < qualityLabels.count; index++) {
+                NSString *qualityLabel = qualityLabels[index];
+                NSString *displayLabel = index < 2 ? LOC(qualityLabel) : qualityLabel;
+                [rows addObject:[%c(YTSettingsSectionItem)
+                    checkmarkItemWithTitle:displayLabel
+                    titleDescription:nil
+                    selectBlock:^BOOL (YTSettingsCell *cell, NSUInteger selectedIndex) {
+                        klSetInt(selectedIndex, key);
+                        [settingsViewController reloadData];
+                        return YES;
+                    }]];
+            }
+
+            NSInteger selectedIndex = klInt(key);
+            if (selectedIndex < 0 || selectedIndex >= (NSInteger)qualityLabels.count) selectedIndex = 0;
+            YTSettingsPickerViewController *picker = [[%c(YTSettingsPickerViewController) alloc]
+                initWithNavTitle:LOC(@"SelectQuality")
+                pickerSectionTitle:nil
+                rows:rows
+                selectedItemIndex:(NSUInteger)selectedIndex
+                parentResponder:[self parentResponder]];
+            [settingsViewController pushViewController:picker];
+            return YES;
+        }];
 }
 
 %new(v@:@)
@@ -167,6 +210,8 @@
                 [self kl_switchWithTitle:@"PersistentProgressBar"   key:@"persistentProgressBar"],
                 [self kl_switchWithTitle:@"StockVolumeHUD"          key:@"stockVolumeHUD"],
                 [self kl_switchWithTitle:@"NoRelatedInOverlay"      key:@"noRelatedInOverlay"],
+                [self kl_qualityItemWithTitle:@"PlaybackQualityOnWiFi" key:@"wiFiQualityIndex"],
+                [self kl_qualityItemWithTitle:@"PlaybackQualityOnMobile" key:@"cellQualityIndex"],
             ];
             YTSettingsPickerViewController *picker = [[%c(YTSettingsPickerViewController) alloc] initWithNavTitle:LOC(@"Player") pickerSectionTitle:nil rows:rows selectedItemIndex:NSNotFound parentResponder:[self parentResponder]];
             [settingsViewController pushViewController:picker];

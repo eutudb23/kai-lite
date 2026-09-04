@@ -85,6 +85,11 @@ static NSString *const kSuiteName = @"com.kai-lite.core";
         @"stockVolumeHUD":          @NO,
         @"noRelatedInOverlay":      @NO,
 
+        // ---- Quality ----
+        // Index 0 is Default and leaves YouTube's automatic quality unchanged.
+        @"wiFiQualityIndex":        @0,
+        @"cellQualityIndex":        @0,
+
         // ---- Shorts ----
         @"shortsOnlyMode":          @NO,
         @"limitShorts":             @NO,
