@@ -1,6 +1,6 @@
 Package: com.kai-lite.core
 Name: kai-lite Core
-Version: 0.2.0
+Version: 0.2.1
 Architecture: iphoneos-arm
 Description: Unified settings menu for the kai-lite YouTube IPA. Includes SponsorBlock.
 Maintainer: kai-lite

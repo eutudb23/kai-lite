@@ -86,6 +86,12 @@ static NSString *KLEnabledCategoriesParam(void) {
 - (void)playbackController:(id)arg1 didActivateVideo:(id)arg2 withPlaybackData:(id)arg3 {
     %orig;
 
+    NSString *qualityKey = KLIsUsingWiFi() ? @"wiFiQualityIndex" : @"cellQualityIndex";
+    if (klInt(qualityKey) != 0) {
+        [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(kl_applyConfiguredQuality) object:nil];
+        [self performSelector:@selector(kl_applyConfiguredQuality) withObject:nil afterDelay:1.0];
+    }
+
     if (!klBool(@"sponsorBlock")) return;
 
     NSString *videoID = self.currentVideoID;
@@ -117,15 +123,6 @@ static NSString *KLEnabledCategoriesParam(void) {
             self.kl_sbSegments[@"flags"] = skipFlags;
         }
     }] resume];
-}
-
-- (void)loadWithPlayerTransition:(id)transition playbackConfig:(id)playbackConfig {
-    %orig;
-
-    NSString *qualityKey = KLIsUsingWiFi() ? @"wiFiQualityIndex" : @"cellQualityIndex";
-    if (klInt(qualityKey) != 0) {
-        [self performSelector:@selector(kl_applyConfiguredQuality) withObject:nil afterDelay:1.0];
-    }
 }
 
 %new
