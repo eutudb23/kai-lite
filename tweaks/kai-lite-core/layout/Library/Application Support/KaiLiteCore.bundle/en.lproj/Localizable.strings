@@ -16,6 +16,10 @@
 "Interface"     = "Interface";
 "SponsorBlock"  = "SponsorBlock";
 
+/* ---------- Account ---------- */
+"YouTubeSignInPatch"     = "YouTube Sign-In Patch";
+"YouTubeSignInPatchDesc" = "Temporarily exposes YouTube's official bundle identity so Google sign-in can work in a sideloaded app. Restart after enabling it. After signing in successfully, disable it and restart again; leaving it enabled may hide icons or stop notifications.";
+
 /* ---------- Downloading ---------- */
 "DownloadManager"     = "Download manager";
 "DownloadManagerDesc" = "Replaces 'Download' button action under the player with a Download Manager.";

@@ -90,6 +90,10 @@ static NSString *const kSuiteName = @"com.kai-lite.core";
         @"wiFiQualityIndex":        @0,
         @"cellQualityIndex":        @0,
 
+        // ---- Account ----
+        // Temporary compatibility patch for signing into a sideloaded build.
+        @"googleSignInPatch":       @NO,
+
         // ---- Shorts ----
         @"shortsOnlyMode":          @NO,
         @"limitShorts":             @NO,

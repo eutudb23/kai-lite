@@ -5,13 +5,13 @@ endif
 ARCHS = arm64
 INSTALL_TARGET_PROCESSES = YouTube
 TARGET = iphone:clang:latest:13.0
-PACKAGE_VERSION = 0.2.1
+PACKAGE_VERSION = 0.2.2
 
 include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = KaiLiteCore
 
-KaiLiteCore_FILES   = Tweak.x Settings.x Utils/NSBundle+KL.m Utils/KLUserDefaults.m
+KaiLiteCore_FILES   = Tweak.x Settings.x SignIn.x Utils/NSBundle+KL.m Utils/KLUserDefaults.m
 KaiLiteCore_CFLAGS  = -fobjc-arc -Wno-deprecated-declarations
 KaiLiteCore_FRAMEWORKS = UIKit Foundation SystemConfiguration
 

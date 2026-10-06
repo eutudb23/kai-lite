@@ -119,6 +119,11 @@
     Class YTSettingsSectionItemClass = %c(YTSettingsSectionItem);
     YTSettingsViewController *settingsViewController = [self valueForKey:@"_settingsViewControllerDelegate"];
 
+    // Temporary sign-in compatibility patch. It is intentionally a direct
+    // kai-lite row so it remains reachable while the user is signed out.
+    [sectionItems addObject:[self kl_switchWithTitle:@"YouTubeSignInPatch"
+                                                  key:@"googleSignInPatch"]];
+
     // 1. Downloading
     YTSettingsSectionItem *downloading = [YTSettingsSectionItemClass itemWithTitle:LOC(@"Downloading")
         accessibilityIdentifier:@"KaiLiteSectionItem"
