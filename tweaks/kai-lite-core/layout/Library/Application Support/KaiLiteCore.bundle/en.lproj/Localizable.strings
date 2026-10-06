@@ -18,7 +18,7 @@
 
 /* ---------- Account ---------- */
 "YouTubeSignInPatch"     = "YouTube Sign-In Patch";
-"YouTubeSignInPatchDesc" = "Temporarily exposes YouTube's official bundle identity so Google sign-in can work in a sideloaded app. Restart after enabling it. After signing in successfully, disable it and restart again; leaving it enabled may hide icons or stop notifications.";
+"YouTubeSignInPatchDesc" = "Removes the device challenge that Google rejects for resigned YouTube apps. Restart after enabling it, sign in, then disable it and restart again.";
 
 /* ---------- Downloading ---------- */
 "DownloadManager"     = "Download manager";
