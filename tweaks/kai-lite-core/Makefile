@@ -5,7 +5,7 @@ endif
 ARCHS = arm64
 INSTALL_TARGET_PROCESSES = YouTube
 TARGET = iphone:clang:latest:13.0
-PACKAGE_VERSION = 0.2.5
+PACKAGE_VERSION = 0.2.6
 
 include $(THEOS)/makefiles/common.mk
 

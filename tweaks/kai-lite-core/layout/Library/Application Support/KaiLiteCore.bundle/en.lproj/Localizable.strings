@@ -18,7 +18,7 @@
 
 /* ---------- Account ---------- */
 "YouTubeSignInPatch"     = "YouTube Sign-In Patch";
-"YouTubeSignInPatchDesc" = "Removes the device challenge that Google rejects for resigned YouTube apps. Restart after enabling it, sign in, then disable it and restart again.";
+"YouTubeSignInPatchDesc" = "Uses YouTube's official identity in Google's SSO flow, enables Safari sign-in, and removes the rejected device challenge. Restart after enabling it, sign in, then disable it and restart again.";
 
 /* ---------- Downloading ---------- */
 "DownloadManager"     = "Download manager";
