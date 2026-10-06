@@ -33,6 +33,27 @@ static void KLSignInTrace(NSString *event) {
 // caused UIKit to crash on iPadOS 17.
 %group KLGoogleSignInPatch
 
+// This is the exact A/B configuration the user requested. YouTube 21.40.5
+// exposes the value both on the aggregate cold config and on the account-client
+// implementation, so force both entry points to avoid a cached false value.
+%hook YTColdConfig
+
+- (BOOL)accountClientEnableDirectSigninIdHandling {
+    KLSignInTrace(@"YTColdConfig.accountClientEnableDirectSigninIdHandling.YES");
+    return YES;
+}
+
+%end
+
+%hook YTColdConfigAccountClientImpl
+
+- (BOOL)enableDirectSigninIdHandling {
+    KLSignInTrace(@"YTColdConfigAccountClientImpl.enableDirectSigninIdHandling.YES");
+    return YES;
+}
+
+%end
+
 %hook SSOBundleIdServiceImpl
 
 - (id)bundleId {
@@ -100,8 +121,8 @@ static void KLSignInTrace(NSString *event) {
 
 
 %ctor {
-    if (klBool(@"googleSignInPatchV5")) {
-        KLSignInTrace(@"patch.enabled.v5");
+    if (klBool(@"googleSignInPatchV6")) {
+        KLSignInTrace(@"patch.enabled.v6");
         %init(KLGoogleSignInPatch);
     }
 }
