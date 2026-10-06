@@ -64,6 +64,24 @@ jq -c "$filter_expr" "$MANIFEST" | while read -r entry; do
     continue
   fi
 
+  url=$(jq -r '.url // empty' <<<"$entry")
+  if [[ -n "$url" ]]; then
+    sha=$(jq -r '.sha256 // empty' <<<"$entry")
+    echo "::group::Download $name ($url)"
+    tmp=$(mktemp -d)
+    curl -L --fail --silent --show-error -o "$tmp/pkg.deb" "$url"
+    if [[ -n "$sha" ]]; then
+      actual=$(shasum -a 256 "$tmp/pkg.deb" | awk '{print $1}')
+      if [[ "$actual" != "$sha" ]]; then
+        echo "::error::SHA256 mismatch for $name: expected $sha, got $actual"; exit 1
+      fi
+    fi
+    cp "$tmp/pkg.deb" "$OUT_DIR/${name}.deb"
+    rm -rf "$tmp"
+    echo "::endgroup::"
+    continue
+  fi
+
   sparse=$(jq -r '.sparse // empty' <<<"$entry")
   if [[ -n "$sparse" ]]; then
     repo=$(jq -r '.repo' <<<"$entry")
@@ -84,9 +102,34 @@ jq -c "$filter_expr" "$MANIFEST" | while read -r entry; do
     continue
   fi
 
+  local_path=$(jq -r '.local // empty' <<<"$entry")
+  glob=$(jq -r '.deb_glob' <<<"$entry")
+  if [[ -n "$local_path" ]]; then
+    src="$ROOT/$local_path"
+    if [[ ! -d "$src" ]]; then
+      echo "::error::Local tweak directory not found: $src"; exit 1
+    fi
+    echo "::group::Build $name (local: $local_path)"
+    pushd "$src" >/dev/null
+    make clean >/dev/null 2>&1 || true
+    make package \
+      THEOS_PACKAGE_SCHEME=rootless \
+      FINALPACKAGE=1 DEBUG=0 \
+      -j"$(sysctl -n hw.ncpu)"
+
+    # shellcheck disable=SC2086
+    found=( $glob )
+    if (( ${#found[@]} == 0 )); then
+      echo "::error::No .deb produced for $name (glob=$glob)"; exit 1
+    fi
+    cp "${found[0]}" "$OUT_DIR/${name}.deb"
+    popd >/dev/null
+    echo "::endgroup::"
+    continue
+  fi
+
   repo=$(jq -r '.repo' <<<"$entry")
   ref=$(jq  -r '.ref // empty' <<<"$entry")
-  glob=$(jq -r '.deb_glob' <<<"$entry")
   src="$WORK/$name"
 
   echo "::group::Build $name ($repo@${ref:-default})"
