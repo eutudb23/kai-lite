@@ -92,7 +92,8 @@ static NSString *const kSuiteName = @"com.kai-lite.core";
 
         // ---- Account ----
         // Temporary compatibility patch for signing into a sideloaded build.
-        @"googleSignInPatch":       @NO,
+        // Versioned so upgrading from the launch-crashing patch resets it.
+        @"googleSignInPatchV2":     @NO,
 
         // ---- Shorts ----
         @"shortsOnlyMode":          @NO,
