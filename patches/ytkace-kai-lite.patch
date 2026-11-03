@@ -1,0 +1,40 @@
+diff --git a/Tweak/Entry.mm b/Tweak/Entry.mm
+index 2bda03f..2c8cf58 100644
+--- a/Tweak/Entry.mm
++++ b/Tweak/Entry.mm
+@@ -13,7 +13,7 @@
+ NSString * const YTKACEVersion = @YTKACE_VERSION_STRING;
+ 
+ static void YTKACEInstallModules(void) {
+-    YTKACEInstallSideloadCompatibilityHooks();
++    // Kai Lite already owns the sign-in and sideload compatibility path.
+     YTKACEInstallCastCompatibilityHooks();
+     YTKACEInstallAdsHooks();
+     YTKACEInstallPromoHooks();
+@@ -62,8 +62,7 @@ static void YTKACEInstallModules(void) {
+     YTKACEInstallProfilePictureHooks();
+     YTKACEInstallPostImageSaverHooks();
+     YTKACEInstallNativeShareHooks();
+-    YTKACEInstallSettingsEntryHooks();
+-    YTKACEInstallNativeSettingsHooks();
++    // Kai Lite opens the feature pages from its existing settings section.
+ }
+ 
+ __attribute__((constructor))
+diff --git a/Tweak/Runtime/Preferences.mm b/Tweak/Runtime/Preferences.mm
+index c5d5a3d..fd429ea 100644
+--- a/Tweak/Runtime/Preferences.mm
++++ b/Tweak/Runtime/Preferences.mm
+@@ -54,10 +54,10 @@ void YTKACERegisterDefaults(void) {
+         objectForKey:@"YTKACE.Preference.Downloads.Placement"] != nil;
+     [YTKACEDefaults() registerDefaults:@{
+         YTKACEMasterEnabledKey: @YES,
+-        YTKACENoAdsKey: @YES,
++        YTKACENoAdsKey: @NO,
+         YTKACEOLEDKey: @NO,
+         YTKACEDownloadKey: @NO,
+-        YTKACEBackgroundPlaybackKey: @YES,
++        YTKACEBackgroundPlaybackKey: @NO,
+         YTKACEPiPKey: @NO,
+         YTKACESpeedKey: @NO,
+         YTKACELoopKey: @NO,

@@ -82,14 +82,20 @@ static NSString *KLEnabledCategoriesParam(void) {
 %hook YTPlayerViewController
 
 %property (nonatomic, strong) NSMutableDictionary *kl_sbSegments;
+%property (nonatomic, copy) NSString *kl_qualityScheduledVideoID;
+%property (nonatomic, assign) NSInteger kl_qualityRetryCount;
 
 - (void)playbackController:(id)arg1 didActivateVideo:(id)arg2 withPlaybackData:(id)arg3 {
     %orig;
 
     NSString *qualityKey = KLIsUsingWiFi() ? @"wiFiQualityIndex" : @"cellQualityIndex";
+    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(kl_applyConfiguredQuality) object:nil];
     if (klInt(qualityKey) != 0) {
-        [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(kl_applyConfiguredQuality) object:nil];
+        self.kl_qualityScheduledVideoID = self.currentVideoID;
+        self.kl_qualityRetryCount = 0;
         [self performSelector:@selector(kl_applyConfiguredQuality) withObject:nil afterDelay:1.0];
+    } else {
+        self.kl_qualityScheduledVideoID = nil;
     }
 
     if (!klBool(@"sponsorBlock")) return;
@@ -128,6 +134,8 @@ static NSString *KLEnabledCategoriesParam(void) {
 %new
 - (void)kl_applyConfiguredQuality {
     if (![self.view.superview isKindOfClass:NSClassFromString(@"YTWatchView")]) return;
+    if (self.kl_qualityScheduledVideoID.length == 0 ||
+        ![self.kl_qualityScheduledVideoID isEqualToString:self.currentVideoID]) return;
 
     NSString *qualityKey = KLIsUsingWiFi() ? @"wiFiQualityIndex" : @"cellQualityIndex";
     NSInteger selectedIndex = klInt(qualityKey);
@@ -139,15 +147,26 @@ static NSString *KLEnabledCategoriesParam(void) {
     YTSingleVideoController *activeVideo = (YTSingleVideoController *)self.activeVideo;
     if (![activeVideo respondsToSelector:@selector(selectableVideoFormats)] ||
         ![activeVideo respondsToSelector:@selector(setVideoFormatConstraint:)]) return;
+    NSArray<MLFormat *> *formats = activeVideo.selectableVideoFormats;
+    if (formats.count == 0) {
+        if (self.kl_qualityRetryCount++ < 4) {
+            [self performSelector:@selector(kl_applyConfiguredQuality) withObject:nil afterDelay:0.5];
+        }
+        return;
+    }
 
     MLFormat *closestFormat = nil;
     NSInteger closestDifference = selectedIndex == 1 ? -1 : NSIntegerMax;
+    CGFloat highestFPS = -1;
 
-    for (MLFormat *format in activeVideo.selectableVideoFormats) {
+    for (MLFormat *format in formats) {
+        if ([format.qualityLabel rangeOfString:@"Premium" options:NSCaseInsensitiveSearch].location != NSNotFound) continue;
         if (selectedIndex == 1) {
             NSInteger resolution = format.singleDimensionResolution;
-            if (resolution > closestDifference) {
+            if (resolution > closestDifference ||
+                (resolution == closestDifference && format.FPS > highestFPS)) {
                 closestDifference = resolution;
+                highestFPS = format.FPS;
                 closestFormat = format;
             }
             continue;
@@ -162,8 +181,10 @@ static NSString *KLEnabledCategoriesParam(void) {
         if (resolution <= 0 || format.qualityLabel.length == 0) continue;
 
         NSInteger difference = labs(resolution - targetResolution);
-        if (difference < closestDifference) {
+        if (difference < closestDifference ||
+            (difference == closestDifference && format.FPS > highestFPS)) {
             closestDifference = difference;
+            highestFPS = format.FPS;
             closestFormat = format;
         }
     }

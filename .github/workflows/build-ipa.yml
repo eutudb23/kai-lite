@@ -46,7 +46,7 @@ on:
       enable_youquality:
         description: "YouQuality (remember quality)"
         type: boolean
-        default: true
+        default: false
       enable_return_youtube_dislikes:
         description: "Return YouTube Dislikes"
         type: boolean
@@ -71,6 +71,10 @@ on:
         description: "kai-lite Core (unified settings menu + SponsorBlock)"
         type: boolean
         default: true
+      enable_ytkace:
+        description: "Kai Lite v2 media, tabs, feed, Shorts, and interface features"
+        type: boolean
+        default: true
 
 concurrency:
   group: build-ipa-${{ github.ref }}
@@ -92,7 +96,7 @@ jobs:
       - name: Mask sensitive inputs
         uses: levibostian/action-hide-sensitive-inputs@1.2.0
         with:
-          exclude_inputs: bundle_id,app_name,publish_release,build_trollfools_companion,enable_safari_extension,enable_youtube_x,enable_youpip,enable_ytuhd,enable_youquality,enable_return_youtube_dislikes,enable_ytabconfig,enable_ytvideooverlay,enable_donteatmycontent,enable_ytsideload,enable_kailite
+          exclude_inputs: bundle_id,app_name,publish_release,build_trollfools_companion,enable_safari_extension,enable_youtube_x,enable_youpip,enable_ytuhd,enable_youquality,enable_return_youtube_dislikes,enable_ytabconfig,enable_ytvideooverlay,enable_donteatmycontent,enable_ytsideload,enable_kailite,enable_ytkace
 
       - id: compute
         env:
@@ -106,6 +110,7 @@ jobs:
           ENABLE_DONTEATMYCONTENT:        ${{ inputs.enable_donteatmycontent }}
           ENABLE_YTSIDELOAD:              ${{ inputs.enable_ytsideload }}
           ENABLE_KAILITE:                 ${{ inputs.enable_kailite }}
+          ENABLE_YTKACE:                  ${{ inputs.enable_ytkace }}
           ENABLE_SAFARI_EXTENSION:        ${{ inputs.enable_safari_extension }}
         run: |
           # Single source of truth: tweaks.json names. build_all_tweaks.sh renames
@@ -124,6 +129,7 @@ jobs:
           fi
           [[ "$ENABLE_DONTEATMYCONTENT"        == "true" ]] && NAMES+=("DontEatMyContent")
           [[ "$ENABLE_KAILITE"                 == "true" ]] && NAMES+=("KaiLiteCore")
+          [[ "$ENABLE_YTKACE"                  == "true" ]] && NAMES+=("YTKACE")
           [[ "$ENABLE_YTSIDELOAD"              == "true" ]] && NAMES+=("YTSideload")
           [[ "$ENABLE_SAFARI_EXTENSION"        == "true" ]] && NAMES+=("OpenYouTubeSafariExtension")
 
@@ -155,7 +161,7 @@ jobs:
       - name: Mask sensitive inputs
         uses: levibostian/action-hide-sensitive-inputs@1.2.0
         with:
-          exclude_inputs: bundle_id,app_name,publish_release,build_trollfools_companion,enable_safari_extension,enable_youtube_x,enable_youpip,enable_ytuhd,enable_youquality,enable_return_youtube_dislikes,enable_ytabconfig,enable_ytvideooverlay,enable_donteatmycontent,enable_ytsideload,enable_kailite
+          exclude_inputs: bundle_id,app_name,publish_release,build_trollfools_companion,enable_safari_extension,enable_youtube_x,enable_youpip,enable_ytuhd,enable_youquality,enable_return_youtube_dislikes,enable_ytabconfig,enable_ytvideooverlay,enable_donteatmycontent,enable_ytsideload,enable_kailite,enable_ytkace
 
       - uses: actions/checkout@v6
 

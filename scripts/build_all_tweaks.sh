@@ -141,6 +141,16 @@ jq -c "$filter_expr" "$MANIFEST" | while read -r entry; do
     fi
   fi
 
+  patch_file=$(jq -r '.patch // empty' <<<"$entry")
+  if [[ -n "$patch_file" ]]; then
+    if git -C "$src" apply --reverse --check "$ROOT/$patch_file" >/dev/null 2>&1; then
+      echo "Patch already applied: $patch_file"
+    else
+      git -C "$src" apply --check "$ROOT/$patch_file"
+      git -C "$src" apply "$ROOT/$patch_file"
+    fi
+  fi
+
   pushd "$src" >/dev/null
   make clean >/dev/null 2>&1 || true
   make package \

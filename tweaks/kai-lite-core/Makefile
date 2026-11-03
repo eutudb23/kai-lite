@@ -11,7 +11,7 @@ include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = KaiLiteCore
 
-KaiLiteCore_FILES   = Tweak.x Settings.x SignIn.x TabBar.x Utils/NSBundle+KL.m Utils/KLUserDefaults.m
+KaiLiteCore_FILES   = Tweak.x Settings.x SignIn.x TabBar.x CopyInfo.x V2Bridge.m Utils/NSBundle+KL.m Utils/KLUserDefaults.m
 KaiLiteCore_CFLAGS  = -fobjc-arc -Wno-deprecated-declarations
 KaiLiteCore_FRAMEWORKS = UIKit Foundation SystemConfiguration
 

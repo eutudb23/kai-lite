@@ -13,6 +13,10 @@
 "Player"        = "Player";
 "Shorts"        = "Shorts";
 "TabBar"        = "Tab bar";
+"MorePlayerControls" = "Player controls";
+"Captions"     = "Captions";
+"Gestures"     = "Gestures";
+"WatchPage"    = "Watch page";
 "Interface"     = "Interface";
 "SponsorBlock"  = "SponsorBlock";
 
@@ -214,3 +218,7 @@
 "Cat_fillerDesc"          = "Tangential scenes added only for filler.";
 
 "SegmentSkipped"          = "Segment skipped";
+"CopyVideoInfo"           = "Copy video information";
+"CopyTitle"               = "Copy title";
+"CopyDescription"         = "Copy description";
+"Cancel"                  = "Cancel";

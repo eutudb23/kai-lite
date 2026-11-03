@@ -74,6 +74,8 @@ static NSString *KLPivotIdentifier(YTIPivotBarSupportedRenderers *item) {
 }
 
 static void KLApplyTabBarRenderer(YTIPivotBarRenderer *renderer) {
+    // The v2 media engine owns its full tab editor when present.
+    if (NSClassFromString(@"YTKACETabEditorController") != Nil) return;
     NSMutableArray<YTIPivotBarSupportedRenderers *> *items = [renderer itemsArray];
     if (![items isKindOfClass:[NSMutableArray class]]) return;
 

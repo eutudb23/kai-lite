@@ -38,6 +38,8 @@ NSArray<NSString *> *KLQualityLabels(void);
 
 @interface YTPlayerViewController (KaiLite)
 @property (nonatomic, strong) NSMutableDictionary *kl_sbSegments;
+@property (nonatomic, copy) NSString *kl_qualityScheduledVideoID;
+@property (nonatomic, assign) NSInteger kl_qualityRetryCount;
 - (void)kl_skipIfInSegment;
 - (void)kl_applyConfiguredQuality;
 @end
