@@ -81,6 +81,167 @@ index 8907d53..3135dd0 100644
 +    id textNode = YTKACEFindExpandableText(postNode, 0);
 +    NSString *text = YTKACENodeText(textNode ?: postNode, 0);
      if (text.length == 0) return;
+diff --git a/Tweak/Features/Shorts/ShortsHooks.mm b/Tweak/Features/Shorts/ShortsHooks.mm
+index 2e1888c..1996e01 100644
+--- a/Tweak/Features/Shorts/ShortsHooks.mm
++++ b/Tweak/Features/Shorts/ShortsHooks.mm
+@@ -12,7 +12,4 @@
+ 
+-static NSHashTable<UIView *> *YTKACEReelViews;
+ static NSMutableDictionary<NSString *, NSValue *> *YTKACEShortsOriginals;
+ static NSMutableSet<NSString *> *YTKACEShortsInstalledHooks;
+-static const void *YTKACEShortsTrackAssociation = &YTKACEShortsTrackAssociation;
+-static const void *YTKACEShortsFillAssociation = &YTKACEShortsFillAssociation;
+ static const void *YTKACEShortsSkipAssociation = &YTKACEShortsSkipAssociation;
+@@ -29,4 +26,2 @@ static const void *YTKACEShortsInitialRefreshAssociation =
+ static NSInteger const YTKACEShortsDownloadTag = 0x59544B44;
+-static double YTKACELastShortsTime;
+-static double YTKACELastShortsDuration;
+ static id YTKACELatestShortsPlayerResponse;
+@@ -39,2 +34,3 @@ static void YTKACEPausedLayout(UIView *receiver, SEL selector);
+ static void YTKACEInteractiveStickerLayout(UIView *receiver, SEL selector);
++static BOOL YTKACEShortsPlayerBarSetting(id receiver, SEL selector);
+ static NSArray<NSArray<NSString *> *> *YTKACEShortsRules(void);
+@@ -403,3 +399,4 @@ static IMP YTKACEShortsOriginal(id receiver, SEL selector,
+             original != (IMP)YTKACEPausedLayout &&
+-            original != (IMP)YTKACEInteractiveStickerLayout) {
++            original != (IMP)YTKACEInteractiveStickerLayout &&
++            original != (IMP)YTKACEShortsPlayerBarSetting) {
+             if (candidate == ordinal) {
+@@ -433,2 +430,23 @@ static void YTKACEInvokeShortsOriginal(id receiver, SEL selector) {
+ 
++static BOOL YTKACEShortsPlayerBarSetting(id receiver, SEL selector) {
++    if (YTKACEFeatureEnabled(@"shortsProgress")) {
++        return selector != NSSelectorFromString(@"shouldEnablePlayerBarOnlyOnPause");
++    }
++    NSMutableDictionary *threadState = NSThread.currentThread.threadDictionary;
++    NSString *depthKey = [NSString stringWithFormat:
++        @"YTKACE.Shorts.%p.%@", receiver, NSStringFromSelector(selector)];
++    NSUInteger depth = [threadState[depthKey] unsignedIntegerValue];
++    IMP original = YTKACEShortsOriginal(receiver, selector, depth);
++    if (original == NULL) return NO;
++    threadState[depthKey] = @(depth + 1);
++    BOOL result;
++    @try {
++        result = ((BOOL (*)(id, SEL))original)(receiver, selector);
++    } @finally {
++        if (depth == 0) [threadState removeObjectForKey:depthKey];
++        else threadState[depthKey] = @(depth);
++    }
++    return result;
++}
++
+ static Method YTKACEShortsDirectMethod(Class cls, SEL selector) {
+@@ -453,3 +471,4 @@ static BOOL YTKACEShortsIsReplacement(IMP implementation) {
+         implementation == (IMP)YTKACEPausedLayout ||
+-        implementation == (IMP)YTKACEInteractiveStickerLayout;
++        implementation == (IMP)YTKACEInteractiveStickerLayout ||
++        implementation == (IMP)YTKACEShortsPlayerBarSetting;
+ }
+@@ -619,26 +638,2 @@ static BOOL YTKACEAdvanceShort(id controller, id sender) {
+ 
+-static void YTKACEUpdateShortsProgress(void) {
+-    BOOL enabled = YTKACEFeatureEnabled(@"shortsProgress");
+-    CGFloat ratio = YTKACELastShortsDuration > 0.0
+-        ? (CGFloat)MIN(1.0, MAX(0.0, YTKACELastShortsTime / YTKACELastShortsDuration))
+-        : 0.0;
+-    for (UIView *view in YTKACEReelViews.allObjects) {
+-        CALayer *track = objc_getAssociatedObject(view, YTKACEShortsTrackAssociation);
+-        CALayer *fill = objc_getAssociatedObject(view, YTKACEShortsFillAssociation);
+-        track.hidden = !enabled;
+-        fill.hidden = !enabled;
+-        if (enabled) {
+-            CGFloat height = 3.0;
+-            track.frame = CGRectMake(0.0,
+-                                     MAX(0.0, CGRectGetHeight(view.bounds) - height),
+-                                     CGRectGetWidth(view.bounds),
+-                                     height);
+-            fill.frame = CGRectMake(0.0, 0.0,
+-                                    CGRectGetWidth(track.bounds) * ratio,
+-                                    height);
+-            YTKACEStyleProgressLayer(fill, CGRectGetWidth(track.bounds));
+-        }
+-    }
+-}
+-
+ @interface YTKACEShortsPinchTarget : NSObject <UIGestureRecognizerDelegate>
+@@ -730,21 +725,3 @@ static void YTKACEPrepareNewShortsContainer(UIView *receiver) {
+ static void YTKACEConfigureReelView(UIView *receiver, BOOL showDownload) {
+-    [YTKACEReelViews addObject:receiver];
+     YTKACEPrepareNewShortsContainer(receiver);
+-    CALayer *track = objc_getAssociatedObject(receiver, YTKACEShortsTrackAssociation);
+-    CALayer *fill = objc_getAssociatedObject(receiver, YTKACEShortsFillAssociation);
+-    if (track == nil) {
+-        track = [CALayer layer];
+-        track.backgroundColor = [UIColor colorWithWhite:0.45 alpha:0.55].CGColor;
+-        track.zPosition = 10000.0;
+-        fill = [CALayer layer];
+-        fill.backgroundColor = UIColor.redColor.CGColor;
+-        objc_setAssociatedObject(receiver, YTKACEShortsFillAssociation,
+-                                 fill, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+-        [track addSublayer:fill];
+-        [receiver.layer addSublayer:track];
+-        objc_setAssociatedObject(receiver, YTKACEShortsTrackAssociation,
+-                                 track, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+-        objc_setAssociatedObject(receiver, YTKACEShortsFillAssociation,
+-                                 fill, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+-    }
+     if (showDownload) {
+@@ -863,3 +840,2 @@ static void YTKACEConfigureReelView(UIView *receiver, BOOL showDownload) {
+     }
+-    YTKACEUpdateShortsProgress();
+ }
+@@ -962,2 +938,22 @@ static void YTKACEInstallShortsController(NSString *className) {
+ 
++static void YTKACEInstallShortsPlayerBarSetting(NSString *className,
++                                                NSString *selectorName) {
++    Class cls = NSClassFromString(className);
++    SEL selector = NSSelectorFromString(selectorName);
++    Method method = YTKACEShortsDirectMethod(cls, selector);
++    if (method == NULL) return;
++    NSString *key = YTKACEShortsHookKey(cls, selector);
++    if ([YTKACEShortsInstalledHooks containsObject:key] ||
++        YTKACEShortsIsReplacement(method_getImplementation(method))) return;
++    IMP original = NULL;
++    if (YTKACEInstallInstanceHook(className, selectorName,
++                                  (IMP)YTKACEShortsPlayerBarSetting,
++                                  &original) && original != NULL &&
++        !YTKACEShortsIsReplacement(original)) {
++        YTKACEShortsOriginals[key] =
++            [NSValue valueWithPointer:(const void *)original];
++        [YTKACEShortsInstalledHooks addObject:key];
++    }
++}
++
+ static const void *YTKACEShortsLoopAssociation = &YTKACEShortsLoopAssociation;
+@@ -987,6 +983,2 @@ static void YTKACEShortsTimeChanged(NSNotification *notification) {
+     ]);
+-    YTKACELastShortsTime = time;
+-    YTKACELastShortsDuration = duration;
+-    YTKACEUpdateShortsProgress();
+-
+     if (YTKACEShortsLimitReached()) {
+@@ -1023,4 +1015,3 @@ static void YTKACEShortsTimeChanged(NSNotification *notification) {
+ void YTKACEInstallShortsHooks(void) {
+-    if (YTKACEReelViews == nil) {
+-        YTKACEReelViews = [NSHashTable weakObjectsHashTable];
++    if (YTKACEShortsOriginals == nil) {
+         YTKACEShortsOriginals = [NSMutableDictionary dictionary];
+@@ -1058,2 +1049,14 @@ void YTKACEInstallShortsHooks(void) {
+     }
++    for (NSString *className in @[
++        @"YTReelPlayerViewController",
++        @"YTReelPlayerViewControllerSub",
++        @"YTShortsPlayerViewController"
++    ]) {
++        YTKACEInstallShortsPlayerBarSetting(className,
++                                           @"shouldAlwaysEnablePlayerBar");
++        YTKACEInstallShortsPlayerBarSetting(className,
++                                           @"shouldEnablePlayerBarOnlyOnPause");
++    }
++    YTKACEInstallShortsPlayerBarSetting(@"YTColdConfig",
++                                       @"iosEnableVideoPlayerScrubber");
+     for (NSString *className in @[
 diff --git a/Tweak/Runtime/Preferences.mm b/Tweak/Runtime/Preferences.mm
 index c5d5a3d..cae699c 100644
 --- a/Tweak/Runtime/Preferences.mm
@@ -111,9 +272,14 @@ index c5d5a3d..cae699c 100644
 +        @"YTKACE.Preference.Tabs.Order": @[@"home", @"shorts", @"subscriptions", @"library", @"history"]
      }];
 diff --git a/Tweak/Settings/YTKACESettingsPages.mm b/Tweak/Settings/YTKACESettingsPages.mm
-index f7f4926..e4dca34 100644
+index f7f4926..38b6c01 100644
 --- a/Tweak/Settings/YTKACESettingsPages.mm
 +++ b/Tweak/Settings/YTKACESettingsPages.mm
+@@ -1763,3 +1763,3 @@ static NSDictionary *YTKACEShortsOptionsDefinition(void) {
+         @[
+-            YTKACEToggleDetail(@"Shorts Progress Bar", @"Show a thin progress line at the bottom of Shorts.", @"shortsProgress"),
++            YTKACEToggleDetail(@"Shorts Progress Bar", @"Keep YouTube's native Shorts progress bar visible.", @"shortsProgress"),
+             YTKACEToggle(@"Auto-Scroll to Next Short", @"autoSkipShorts", @"", @""),
 @@ -1895,4 +1895,2 @@ static NSDictionary *YTKACEGeneralDefinition(void) {
                  @"YTKACE.Preference.Posts.SaveImage"),
 -            YTKACEToggleDetail(@"Hold to Copy Text", @"Hold a post or comment to copy its text.",

@@ -41,6 +41,7 @@ Configured in [`tweaks.json`](./tweaks.json). Each one is a workflow toggle.
 
 - **Runtime** (YTABConfig in-app settings drawer) — once a tweak is baked in, YTABConfig adds a settings screen inside YouTube → Settings to flip individual features on/off without rebuilding. Pulls `YouGroupSettings` automatically.
 - **Kai Lite → Downloading** opens the v2 download settings. Choose a Download Button placement to enable downloads; Off is the default. The same page has the community-post text copy switch. Hold a comment to copy it, or open a video's description and tap the copy icon for its title or description.
+- **Kai Lite → Feed / Shorts / Interface** opens the v2 controls for feed content, Shorts playback and buttons, and OLED Black. **Kai Lite → Player** keeps the Wi-Fi/mobile quality choices and opens separate pages for player controls, captions, gestures, and the watch page.
 
 OpenYouTubeSafariExtension is a Safari extension (lives in iOS Settings → Safari → Extensions, not in YTABConfig).
 
