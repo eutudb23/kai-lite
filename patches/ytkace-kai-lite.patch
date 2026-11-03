@@ -2,32 +2,83 @@ diff --git a/Tweak/Entry.mm b/Tweak/Entry.mm
 index 2bda03f..2c8cf58 100644
 --- a/Tweak/Entry.mm
 +++ b/Tweak/Entry.mm
-@@ -13,7 +13,7 @@
- NSString * const YTKACEVersion = @YTKACE_VERSION_STRING;
- 
+@@ -15,3 +15,3 @@ NSString * const YTKACEVersion = @YTKACE_VERSION_STRING;
  static void YTKACEInstallModules(void) {
 -    YTKACEInstallSideloadCompatibilityHooks();
 +    // Kai Lite already owns the sign-in and sideload compatibility path.
      YTKACEInstallCastCompatibilityHooks();
-     YTKACEInstallAdsHooks();
-     YTKACEInstallPromoHooks();
-@@ -62,8 +62,7 @@ static void YTKACEInstallModules(void) {
-     YTKACEInstallProfilePictureHooks();
-     YTKACEInstallPostImageSaverHooks();
+@@ -64,4 +64,3 @@ static void YTKACEInstallModules(void) {
      YTKACEInstallNativeShareHooks();
 -    YTKACEInstallSettingsEntryHooks();
 -    YTKACEInstallNativeSettingsHooks();
 +    // Kai Lite opens the feature pages from its existing settings section.
  }
+diff --git a/Tweak/Features/Interface/PostImageSaver.mm b/Tweak/Features/Interface/PostImageSaver.mm
+index 8907d53..a48b842 100644
+--- a/Tweak/Features/Interface/PostImageSaver.mm
++++ b/Tweak/Features/Interface/PostImageSaver.mm
+@@ -224,2 +224,21 @@ static id YTKACEFindExpandableText(id node, NSUInteger depth) {
  
- __attribute__((constructor))
++static BOOL YTKACEIsOriginalPost(id node) {
++    return [[node description] containsString:@"id.ui.backstage.original_post"];
++}
++
++static id YTKACEPostContainerForView(UIView *view) {
++    for (UIView *candidate = view; candidate != nil; candidate = candidate.superview) {
++        for (NSString *getter in @[@"keepalive_node", @"node"]) {
++            id node = YTKACENodeValue(candidate, getter);
++            if (YTKACEIsOriginalPost(node)) return node;
++            id parents = YTKACENodeValue(node, @"supernodes");
++            if ([parents respondsToSelector:@selector(allObjects)]) parents = [parents allObjects];
++            for (id parent in parents) {
++                if (YTKACEIsOriginalPost(parent)) return parent;
++            }
++        }
++    }
++    return nil;
++}
++
+ static NSString *YTKACENodeText(id node, NSUInteger depth) {
+@@ -228,2 +247,4 @@ static NSString *YTKACENodeText(id node, NSUInteger depth) {
+     if (text.length != 0) return text;
++    text = [YTKACENodeValue(YTKACENodeValue(node, @"currentTextNode"), @"attributedText") string];
++    if (text.length != 0) return text;
+     for (id child in YTKACENodeValue(node, @"subnodes")) {
+@@ -246,5 +267,4 @@ static NSString *YTKACENodeText(id node, NSUInteger depth) {
+     UIView *window = gesture.view;
+-    UIView *cell = [window hitTest:[gesture locationInView:window] withEvent:nil];
+-    while (cell != nil && ![NSStringFromClass(cell.class) isEqualToString:@"_ASCollectionViewCell"]) cell = cell.superview;
+-    return [NSStringFromClass([YTKACENodeValue(cell, @"node") class]) isEqualToString:@"YTCommentNode"];
++    UIView *hitView = [window hitTest:[gesture locationInView:window] withEvent:nil];
++    return YTKACEPostContainerForView(hitView) != nil;
+ }
+@@ -255,16 +275,7 @@ static NSString *YTKACENodeText(id node, NSUInteger depth) {
+     CGPoint point = [gesture locationInView:window];
+-    UIView *cell = [window hitTest:point withEvent:nil];
+-    while (cell != nil && ![NSStringFromClass(cell.class) isEqualToString:@"_ASCollectionViewCell"]) cell = cell.superview;
+-    id cellNode = YTKACENodeValue(cell, @"node");
+-    if (![NSStringFromClass([cellNode class]) isEqualToString:@"YTCommentNode"]) return;
+-    id textNode = YTKACEFindExpandableText(cellNode, 0);
+-    UIView *cellView = YTKACENodeValue(cellNode, @"view");
+-    SEL boundsSel = NSSelectorFromString(@"bounds");
+-    SEL convertSel = NSSelectorFromString(@"convertRect:toNode:");
+-    if (textNode == nil || cellView == nil || ![textNode respondsToSelector:convertSel]) return;
+-    CGRect bounds = ((CGRect (*)(id, SEL))objc_msgSend)(textNode, boundsSel);
+-    CGRect frame = ((CGRect (*)(id, SEL, CGRect, id))objc_msgSend)(textNode, convertSel, bounds, cellNode);
+-    frame = [cellView convertRect:CGRectInset(frame, -8.0, -8.0) toView:window];
+-    if (!CGRectContainsPoint(frame, point)) return;
+-    NSString *text = YTKACENodeText(textNode, 0);
++    UIView *hitView = [window hitTest:point withEvent:nil];
++    id postNode = YTKACEPostContainerForView(hitView);
++    if (postNode == nil) return;
++    id textNode = YTKACEFindExpandableText(postNode, 0);
++    NSString *text = YTKACENodeText(textNode ?: postNode, 0);
+     if (text.length == 0) return;
 diff --git a/Tweak/Runtime/Preferences.mm b/Tweak/Runtime/Preferences.mm
 index c5d5a3d..cae699c 100644
 --- a/Tweak/Runtime/Preferences.mm
 +++ b/Tweak/Runtime/Preferences.mm
-@@ -54,10 +54,10 @@ void YTKACERegisterDefaults(void) {
-         objectForKey:@"YTKACE.Preference.Downloads.Placement"] != nil;
-     [YTKACEDefaults() registerDefaults:@{
+@@ -56,6 +56,6 @@ void YTKACERegisterDefaults(void) {
          YTKACEMasterEnabledKey: @YES,
 -        YTKACENoAdsKey: @YES,
 +        YTKACENoAdsKey: @NO,
@@ -36,20 +87,12 @@ index c5d5a3d..cae699c 100644
 -        YTKACEBackgroundPlaybackKey: @YES,
 +        YTKACEBackgroundPlaybackKey: @NO,
          YTKACEPiPKey: @NO,
-         YTKACESpeedKey: @NO,
-         YTKACELoopKey: @NO,
-@@ -118,7 +118,7 @@ void YTKACERegisterDefaults(void) {
-         @"YTKACE.Preference.Gestures.HUDEnabled": @YES,
-         @"YTKACE.Preference.Gestures.HUDSize": @1,
+@@ -120,3 +120,3 @@ void YTKACERegisterDefaults(void) {
          @"YTKACE.Preference.Gestures.HUDPosition": @0,
 -        @"YTKACE.Preference.Tabs.Startup": @"",
 +        @"YTKACE.Preference.Tabs.Startup": @"subscriptions",
          @"YTKACE.Preference.Feed.HomeTabsHidden": @NO,
-         @"YTKACE.Preference.Shorts.LimitEnabled": @NO,
-         @"YTKACE.Preference.Shorts.FeedHidden": @NO,
-@@ -151,10 +151,12 @@ void YTKACERegisterDefaults(void) {
-         @"YTKACE.Preference.Tabs.Hidden.Learning": @YES,
-         @"YTKACE.Preference.Tabs.Hidden.Fashion": @YES,
+@@ -153,6 +153,8 @@ void YTKACERegisterDefaults(void) {
          @"YTKACE.Preference.Tabs.Hidden.Playlists": @YES,
 -        @"YTKACE.Preference.Tabs.Hidden.History": @YES,
 +        @"YTKACE.Preference.Tabs.Hidden.History": @NO,
@@ -60,5 +103,20 @@ index c5d5a3d..cae699c 100644
 +        @"YTKACE.Preference.Tabs.LabelsHidden": @YES,
 +        @"YTKACE.Preference.Tabs.Order": @[@"home", @"shorts", @"subscriptions", @"library", @"history"]
      }];
-     if (!hasPlacement && [legacyDownloadButton boolValue]) {
-         [YTKACEDefaults() setInteger:1
+diff --git a/Tweak/Settings/YTKACESettingsPages.mm b/Tweak/Settings/YTKACESettingsPages.mm
+index f7f4926..e4dca34 100644
+--- a/Tweak/Settings/YTKACESettingsPages.mm
++++ b/Tweak/Settings/YTKACESettingsPages.mm
+@@ -1895,4 +1895,2 @@ static NSDictionary *YTKACEGeneralDefinition(void) {
+                 @"YTKACE.Preference.Posts.SaveImage"),
+-            YTKACEToggleDetail(@"Hold to Copy Text", @"Hold a post or comment to copy its text.",
+-                               @"YTKACE.Preference.Posts.CopyText"),
+             YTKACEToggleDetail(@"Mini Player for Kids Videos",
+@@ -1975,3 +1973,6 @@ static NSDictionary *YTKACEDownloadsDefinition(void) {
+                 @"YTKACE.Preference.Downloads.Method",
+-                @[@"SABR", @"TV Client", @"Direct"], @[@0, @2, @1], 0)
++                @[@"SABR", @"TV Client", @"Direct"], @[@0, @2, @1], 0),
++            YTKACEToggleDetail(@"Hold to Copy Post Text",
++                @"Hold a community post to copy its text. Hold a comment to copy it without a setting.",
++                @"YTKACE.Preference.Posts.CopyText")
+         ],
