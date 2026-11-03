@@ -1,4 +1,5 @@
 #import "Tweak.h"
+#import "TabBar.h"
 #import <YouTubeHeader/YTIIcon.h>
 #import <YouTubeHeader/YTSettingsGroupData.h>
 
@@ -251,11 +252,68 @@
         accessibilityIdentifier:@"KaiLiteSectionItem"
         detailTextBlock:^NSString *() { return @"‣"; }
         selectBlock:^BOOL (YTSettingsCell *cell, NSUInteger arg1) {
-            NSArray <YTSettingsSectionItem *> *rows = @[
+            NSMutableArray<YTSettingsSectionItem *> *rows = [NSMutableArray arrayWithArray:@[
                 [self kl_switchWithTitle:@"TranslucentTabBar"   key:@"translucentTabBar"],
                 [self kl_switchWithTitle:@"RemoveTabLabels"     key:@"removeTabLabels"],
                 [self kl_switchWithTitle:@"RemoveTabIndicators" key:@"removeTabIndicators"],
-            ];
+            ]];
+            NSDictionary<NSString *, NSString *> *tabTitles = @{
+                @"FEwhat_to_watch": @"HomeTab",
+                @"FEshorts": @"ShortsTab",
+                @"FEuploads": @"CreateTab",
+                @"FEsubscriptions": @"SubscriptionsTab",
+                @"FElibrary": @"LibraryTab",
+            };
+            for (NSString *identifier in @[@"FEshorts", @"FEuploads", @"FEsubscriptions", @"FElibrary"]) {
+                NSString *title = [@"Show" stringByAppendingString:tabTitles[identifier]];
+                [rows addObject:[YTSettingsSectionItemClass
+                    switchItemWithTitle:LOC(title)
+                    titleDescription:LOC([title stringByAppendingString:@"Desc"])
+                    accessibilityIdentifier:@"KaiLiteSectionItem"
+                    switchOn:KLTabIsVisible(identifier)
+                    switchBlock:^BOOL(YTSettingsCell *switchCell, BOOL enabled) {
+                        KLSetTabVisible(identifier, enabled);
+                        return YES;
+                    }
+                    settingItemId:0]];
+            }
+            [rows addObject:[YTSettingsSectionItemClass itemWithTitle:LOC(@"TabOrder")
+                accessibilityIdentifier:@"KaiLiteSectionItem"
+                detailTextBlock:^NSString *() { return @"‣"; }
+                selectBlock:^BOOL(YTSettingsCell *orderCell, NSUInteger orderArg) {
+                    NSMutableArray<YTSettingsSectionItem *> *orderRows = [NSMutableArray array];
+                    for (NSString *identifier in KLTabOrder()) {
+                        [orderRows addObject:[YTSettingsSectionItemClass itemWithTitle:LOC(tabTitles[identifier])
+                            accessibilityIdentifier:@"KaiLiteSectionItem"
+                            detailTextBlock:^NSString *() {
+                                return [NSString stringWithFormat:@"%lu", (unsigned long)([KLTabOrder() indexOfObject:identifier] + 1)];
+                            }
+                            selectBlock:^BOOL(YTSettingsCell *tabCell, NSUInteger tabArg) {
+                                NSMutableArray<YTSettingsSectionItem *> *moveRows = [NSMutableArray array];
+                                for (NSNumber *direction in @[@(-1), @(1)]) {
+                                    NSString *moveTitle = direction.integerValue < 0 ? @"MoveEarlier" : @"MoveLater";
+                                    [moveRows addObject:[YTSettingsSectionItemClass itemWithTitle:LOC(moveTitle)
+                                        accessibilityIdentifier:@"KaiLiteSectionItem"
+                                        detailTextBlock:nil
+                                        selectBlock:^BOOL(YTSettingsCell *moveCell, NSUInteger moveArg) {
+                                            KLMoveTab(identifier, direction.integerValue);
+                                            [settingsViewController reloadData];
+                                            return YES;
+                                        }]];
+                                }
+                                YTSettingsPickerViewController *movePicker = [[%c(YTSettingsPickerViewController) alloc]
+                                    initWithNavTitle:LOC(tabTitles[identifier]) pickerSectionTitle:nil
+                                    rows:moveRows selectedItemIndex:NSNotFound parentResponder:[self parentResponder]];
+                                [settingsViewController pushViewController:movePicker];
+                                return YES;
+                            }]];
+                    }
+                    YTSettingsPickerViewController *orderPicker = [[%c(YTSettingsPickerViewController) alloc]
+                        initWithNavTitle:LOC(@"TabOrder") pickerSectionTitle:nil
+                        rows:orderRows selectedItemIndex:NSNotFound parentResponder:[self parentResponder]];
+                    [settingsViewController pushViewController:orderPicker];
+                    return YES;
+                }]];
             YTSettingsPickerViewController *picker = [[%c(YTSettingsPickerViewController) alloc] initWithNavTitle:LOC(@"TabBar") pickerSectionTitle:nil rows:rows selectedItemIndex:NSNotFound parentResponder:[self parentResponder]];
             [settingsViewController pushViewController:picker];
             return YES;

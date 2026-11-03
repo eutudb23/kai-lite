@@ -152,6 +152,22 @@
 /* ---------- Tab bar ---------- */
 "TranslucentTabBar"       = "Translucent tab bar";
 "TranslucentTabBarDesc"   = "Makes the tab bar translucent.";
+"HomeTab"                 = "Home";
+"ShortsTab"               = "Shorts";
+"CreateTab"               = "Create";
+"SubscriptionsTab"        = "Subscriptions";
+"LibraryTab"              = "You";
+"ShowShortsTab"           = "Show Shorts tab";
+"ShowShortsTabDesc"       = "Display Shorts in the bottom bar.";
+"ShowCreateTab"           = "Show Create button";
+"ShowCreateTabDesc"       = "Display the Create button in the bottom bar.";
+"ShowSubscriptionsTab"    = "Show Subscriptions tab";
+"ShowSubscriptionsTabDesc" = "Display Subscriptions, adding it if YouTube omits it.";
+"ShowLibraryTab"          = "Show You tab";
+"ShowLibraryTabDesc"      = "Display the You tab in the bottom bar.";
+"TabOrder"                = "Tab order";
+"MoveEarlier"             = "Move earlier";
+"MoveLater"               = "Move later";
 "RemoveTabLabels"         = "Remove tab labels";
 "RemoveTabLabelsDesc"     = "Removes the labels under tab icons.";
 "RemoveTabIndicators"     = "Remove tab indicators";
