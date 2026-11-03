@@ -117,12 +117,18 @@ jq -c "$filter_expr" "$MANIFEST" | while read -r entry; do
       FINALPACKAGE=1 DEBUG=0 \
       -j"$(sysctl -n hw.ncpu)"
 
+    shopt -s nullglob
     # shellcheck disable=SC2086
     found=( $glob )
+    shopt -u nullglob
     if (( ${#found[@]} == 0 )); then
       echo "::error::No .deb produced for $name (glob=$glob)"; exit 1
     fi
-    cp "${found[0]}" "$OUT_DIR/${name}.deb"
+    latest="${found[0]}"
+    for candidate in "${found[@]:1}"; do
+      [[ "$candidate" -nt "$latest" ]] && latest="$candidate"
+    done
+    cp "$latest" "$OUT_DIR/${name}.deb"
     popd >/dev/null
     echo "::endgroup::"
     continue
