@@ -13,6 +13,18 @@ index 2bda03f..2c8cf58 100644
 -    YTKACEInstallNativeSettingsHooks();
 +    // Kai Lite opens the feature pages from its existing settings section.
  }
+diff --git a/Tweak/Features/Interface/OverlayVisibilityHooks.mm b/Tweak/Features/Interface/OverlayVisibilityHooks.mm
+index 7f22fc7..a1f86a5 100644
+--- a/Tweak/Features/Interface/OverlayVisibilityHooks.mm
++++ b/Tweak/Features/Interface/OverlayVisibilityHooks.mm
+@@ -569,6 +569,3 @@ static void YTKACEApplyOverlayBehavior(UIView *view) {
+     ]);
+-    BOOL control = [view isKindOfClass:UIControl.class] ||
+-        YTKACEOverlayTokenMatches(token, @[@"control", @"button"]);
+-    BOOL force = (YTKACEOverlayPreference(@"YTKACE.Preference.Overlay.AlwaysShowPlayPause") && playPause) ||
+-        (YTKACEOverlayPreference(@"YTKACE.Preference.Overlay.AlwaysShowControls") && control);
++    BOOL force = YTKACEOverlayPreference(@"YTKACE.Preference.Overlay.AlwaysShowPlayPause") && playPause;
+     YTKACESetOverlayForcedVisible(view, force);
 diff --git a/Tweak/Features/Interface/PostImageSaver.mm b/Tweak/Features/Interface/PostImageSaver.mm
 index 8907d53..3135dd0 100644
 --- a/Tweak/Features/Interface/PostImageSaver.mm
