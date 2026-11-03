@@ -18,6 +18,8 @@ Configured in [`tweaks.json`](./tweaks.json). Each one is a workflow toggle.
 | YTVideoOverlay | [`PoomSmart/YTVideoOverlay`](https://github.com/PoomSmart/YTVideoOverlay) | Overlay framework dep |
 | DontEatMyContent | [`therealFoxster/DontEatMyContent`](https://github.com/therealFoxster/DontEatMyContent) | Notch / Dynamic Island safe-area fix |
 | YTSideload | [`Balackburn/YTSideload`](https://github.com/Balackburn/YTSideload) | **Fixes logout-on-relaunch under sideload** |
+| KaiLiteCore | Local `tweaks/kai-lite-core` | Kai Lite settings, SponsorBlock, Wi-Fi/mobile quality, video information copy, and fallback tab editor |
+| YTKACE | [`itzzace/YTKACE`](https://github.com/itzzace/YTKACE) at the pinned commit in `tweaks.json` | v2 tab editor, downloads, copy actions, feed, Shorts, OLED, and player controls. Its settings entry and sideload hooks are disabled by the local patch so its pages appear inside Kai Lite. |
 | OpenYouTubeSafariExtension | [`BillyCurtis/OpenYouTubeSafariExtension`](https://github.com/BillyCurtis/OpenYouTubeSafariExtension) | "Open in YouTube" Safari extension (off by default; the pre-built `.appex` is sparse-cloned, not compiled) |
 
 ## How to use
@@ -38,6 +40,8 @@ Configured in [`tweaks.json`](./tweaks.json). Each one is a workflow toggle.
 ## Toggles
 
 - **Runtime** (YTABConfig in-app settings drawer) — once a tweak is baked in, YTABConfig adds a settings screen inside YouTube → Settings to flip individual features on/off without rebuilding. Pulls `YouGroupSettings` automatically.
+- **Kai Lite → Downloading** opens the v2 download settings. Choose a Download Button placement to enable downloads; Off is the default. The same page has the community-post text copy switch. Hold a comment to copy it, or open a video's description and tap the copy icon for its title or description.
+- **Kai Lite → Feed / Shorts / Interface** opens the v2 controls for feed content, Shorts playback and buttons, and OLED Black. **Kai Lite → Player** keeps the Wi-Fi/mobile quality choices and opens separate pages for player controls, captions, gestures, and the watch page.
 
 OpenYouTubeSafariExtension is a Safari extension (lives in iOS Settings → Safari → Extensions, not in YTABConfig).
 
@@ -69,6 +73,10 @@ tweaks.json           # Single source of truth for tweak repos + refs
 - **Shared headers** (`YouTubeHeader`, `PSHeader`) are cloned into `$THEOS/include/` so every tweak's Makefile finds them on the standard include path. `YouTubeHeader` is also aliased to `YTHeaders` for older tweaks that include via that name.
 - **Silent deps**: enabling `YTABConfig` automatically builds + injects `YouGroupSettings` (its runtime dependency) — no user-facing toggle needed.
 - **Cache key** includes the enabled list — different toggle combinations get different caches.
+- **v2 source** is a pinned, locally patched MIT-licensed YTKACE build. The patch lives in `patches/ytkace-kai-lite.patch` and the license is in `licenses/YTKACE-LICENSE`. Kai Lite's own tab editor remains available when `enable_ytkace` is off. The v2 runtime features need device validation against each target YouTube version.
+- **v2 bottom-bar default** is Home, Shorts, Subscriptions, You, History, with labels hidden and Subscriptions selected on startup. The YTKACE tab starts hidden. Changes made in the tab editor remain saved across updates.
+- **Quality** stays in Kai Lite's Player settings with separate Wi-Fi and mobile choices. `Default` leaves YouTube's choice alone. v2 leaves YouQuality off by default so it does not compete with those choices; it remains available as an opt-in build toggle.
+- **PiP** is available through Kai Lite → Player → More Player Controls. The v2 workflow leaves YouPiP off by default because its legacy overlay button overlaps the current player controls; it remains an opt-in build toggle.
 - **YTSideload** is pulled from its GitHub Release rather than built from source.
 - **`concurrency: cancel-in-progress`** kills superseded runs to save macOS minutes.
 - **`levibostian/action-hide-sensitive-inputs`** masks the IPA URL from logs.
@@ -112,6 +120,7 @@ If the same tweak breaks a third time, that's the cue to capture the pattern as 
 - [therealFoxster](https://github.com/therealFoxster) — DontEatMyContent
 - [Balackburn](https://github.com/Balackburn) — YTSideload, YTLitePlus
 - [asdfzxcvbn/pyzule-rw](https://github.com/asdfzxcvbn/pyzule-rw) — `cyan`, the IPA-inject tool
+- [itzzace/YTKACE](https://github.com/itzzace/YTKACE) — MIT-licensed v2 feature engine; see `licenses/YTKACE-LICENSE`
 
 ## Legal
 

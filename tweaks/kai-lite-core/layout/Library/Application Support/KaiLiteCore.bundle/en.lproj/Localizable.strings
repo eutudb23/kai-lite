@@ -13,6 +13,10 @@
 "Player"        = "Player";
 "Shorts"        = "Shorts";
 "TabBar"        = "Tab bar";
+"MorePlayerControls" = "Player controls";
+"Captions"     = "Captions";
+"Gestures"     = "Gestures";
+"WatchPage"    = "Watch page";
 "Interface"     = "Interface";
 "SponsorBlock"  = "SponsorBlock";
 
@@ -134,8 +138,6 @@
 "ShortsOnlyModeDesc"      = "Limits YouTube functionality to viewing Shorts only.";
 "LimitShorts"             = "Limit Shorts";
 "LimitShortsDesc"         = "Limits the number of Shorts in the feed to 10-15.";
-"ShortsEnableProgress"    = "Enable progress bar";
-"ShortsEnableProgressDesc"= "Displays progress bar in the Shorts overlay.";
 "ShortsSpeedUp"           = "Increase Shorts playback rate";
 "ShortsSpeedUpDesc"       = "Allows to speed up playback by long pressing on a certain part of the screen.";
 "PinchToFullscreen"       = "Pinch to Fullscreen";
@@ -152,6 +154,22 @@
 /* ---------- Tab bar ---------- */
 "TranslucentTabBar"       = "Translucent tab bar";
 "TranslucentTabBarDesc"   = "Makes the tab bar translucent.";
+"HomeTab"                 = "Home";
+"ShortsTab"               = "Shorts";
+"CreateTab"               = "Create";
+"SubscriptionsTab"        = "Subscriptions";
+"LibraryTab"              = "You";
+"ShowShortsTab"           = "Show Shorts tab";
+"ShowShortsTabDesc"       = "Display Shorts in the bottom bar.";
+"ShowCreateTab"           = "Show Create button";
+"ShowCreateTabDesc"       = "Display the Create button in the bottom bar.";
+"ShowSubscriptionsTab"    = "Show Subscriptions tab";
+"ShowSubscriptionsTabDesc" = "Display Subscriptions, adding it if YouTube omits it.";
+"ShowLibraryTab"          = "Show You tab";
+"ShowLibraryTabDesc"      = "Display the You tab in the bottom bar.";
+"TabOrder"                = "Tab order";
+"MoveEarlier"             = "Move earlier";
+"MoveLater"               = "Move later";
 "RemoveTabLabels"         = "Remove tab labels";
 "RemoveTabLabelsDesc"     = "Removes the labels under tab icons.";
 "RemoveTabIndicators"     = "Remove tab indicators";
@@ -198,3 +216,7 @@
 "Cat_fillerDesc"          = "Tangential scenes added only for filler.";
 
 "SegmentSkipped"          = "Segment skipped";
+"CopyVideoInfo"           = "Copy video information";
+"CopyTitle"               = "Copy title";
+"CopyDescription"         = "Copy description";
+"Cancel"                  = "Cancel";

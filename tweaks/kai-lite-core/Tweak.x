@@ -48,6 +48,37 @@ static BOOL KLIsUsingWiFi(void) {
     return reachable && !connectionRequired && !cellular;
 }
 
+static BOOL KLIsShortsPlayer(YTPlayerViewController *player) {
+    for (UIViewController *controller = player; controller != nil;
+         controller = controller.parentViewController) {
+        NSString *name = NSStringFromClass([controller class]);
+        if ([name containsString:@"Shorts"] || [name containsString:@"Reel"]) return YES;
+    }
+    return NO;
+}
+
+static void KLScheduleConfiguredQuality(YTPlayerViewController *player) {
+    [NSObject cancelPreviousPerformRequestsWithTarget:player
+                                             selector:@selector(kl_applyConfiguredQuality)
+                                               object:nil];
+    NSString *qualityKey = KLIsUsingWiFi() ? @"wiFiQualityIndex" : @"cellQualityIndex";
+    if (klInt(qualityKey) == 0 || KLIsShortsPlayer(player)) {
+        player.kl_qualityScheduledVideoID = nil;
+        return;
+    }
+    player.kl_qualityScheduledVideoID = player.currentVideoID;
+    player.kl_qualityRetryCount = 0;
+    [player performSelector:@selector(kl_applyConfiguredQuality)
+                withObject:nil afterDelay:1.0];
+}
+
+static void KLRetryConfiguredQuality(YTPlayerViewController *player) {
+    if (player.kl_qualityRetryCount++ < 6) {
+        [player performSelector:@selector(kl_applyConfiguredQuality)
+                    withObject:nil afterDelay:0.5];
+    }
+}
+
 // Categories supported by sponsor.ajay.app. Each maps to a settings key sb_cat_<name>.
 NSArray<NSString *> *KLSponsorCategoriesList(void) {
     static NSArray<NSString *> *cats = nil;
@@ -82,15 +113,12 @@ static NSString *KLEnabledCategoriesParam(void) {
 %hook YTPlayerViewController
 
 %property (nonatomic, strong) NSMutableDictionary *kl_sbSegments;
+%property (nonatomic, copy) NSString *kl_qualityScheduledVideoID;
+%property (nonatomic, assign) NSInteger kl_qualityRetryCount;
 
 - (void)playbackController:(id)arg1 didActivateVideo:(id)arg2 withPlaybackData:(id)arg3 {
     %orig;
-
-    NSString *qualityKey = KLIsUsingWiFi() ? @"wiFiQualityIndex" : @"cellQualityIndex";
-    if (klInt(qualityKey) != 0) {
-        [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(kl_applyConfiguredQuality) object:nil];
-        [self performSelector:@selector(kl_applyConfiguredQuality) withObject:nil afterDelay:1.0];
-    }
+    KLScheduleConfiguredQuality(self);
 
     if (!klBool(@"sponsorBlock")) return;
 
@@ -125,9 +153,21 @@ static NSString *KLEnabledCategoriesParam(void) {
     }] resume];
 }
 
+- (void)playbackController:(id)arg1 didLoadContentPlaybackData:(id)arg2 {
+    %orig;
+    KLScheduleConfiguredQuality(self);
+}
+
 %new
 - (void)kl_applyConfiguredQuality {
-    if (![self.view.superview isKindOfClass:NSClassFromString(@"YTWatchView")]) return;
+    if (KLIsShortsPlayer(self)) return;
+    if (self.currentVideoID.length == 0) {
+        KLRetryConfiguredQuality(self);
+        return;
+    }
+    if (self.kl_qualityScheduledVideoID.length == 0)
+        self.kl_qualityScheduledVideoID = self.currentVideoID;
+    if (![self.kl_qualityScheduledVideoID isEqualToString:self.currentVideoID]) return;
 
     NSString *qualityKey = KLIsUsingWiFi() ? @"wiFiQualityIndex" : @"cellQualityIndex";
     NSInteger selectedIndex = klInt(qualityKey);
@@ -138,16 +178,28 @@ static NSString *KLEnabledCategoriesParam(void) {
     NSInteger targetResolution = targetQualityLabel.integerValue;
     YTSingleVideoController *activeVideo = (YTSingleVideoController *)self.activeVideo;
     if (![activeVideo respondsToSelector:@selector(selectableVideoFormats)] ||
-        ![activeVideo respondsToSelector:@selector(setVideoFormatConstraint:)]) return;
+        ![activeVideo respondsToSelector:@selector(setVideoFormatConstraint:)]) {
+        KLRetryConfiguredQuality(self);
+        return;
+    }
+    NSArray<MLFormat *> *formats = activeVideo.selectableVideoFormats;
+    if (formats.count == 0) {
+        KLRetryConfiguredQuality(self);
+        return;
+    }
 
     MLFormat *closestFormat = nil;
     NSInteger closestDifference = selectedIndex == 1 ? -1 : NSIntegerMax;
+    CGFloat highestFPS = -1;
 
-    for (MLFormat *format in activeVideo.selectableVideoFormats) {
+    for (MLFormat *format in formats) {
+        if ([format.qualityLabel rangeOfString:@"Premium" options:NSCaseInsensitiveSearch].location != NSNotFound) continue;
         if (selectedIndex == 1) {
             NSInteger resolution = format.singleDimensionResolution;
-            if (resolution > closestDifference) {
+            if (resolution > closestDifference ||
+                (resolution == closestDifference && format.FPS > highestFPS)) {
                 closestDifference = resolution;
+                highestFPS = format.FPS;
                 closestFormat = format;
             }
             continue;
@@ -162,8 +214,10 @@ static NSString *KLEnabledCategoriesParam(void) {
         if (resolution <= 0 || format.qualityLabel.length == 0) continue;
 
         NSInteger difference = labs(resolution - targetResolution);
-        if (difference < closestDifference) {
+        if (difference < closestDifference ||
+            (difference == closestDifference && format.FPS > highestFPS)) {
             closestDifference = difference;
+            highestFPS = format.FPS;
             closestFormat = format;
         }
     }
@@ -173,10 +227,12 @@ static NSString *KLEnabledCategoriesParam(void) {
     Class constraintClass = %c(MLQuickMenuVideoQualitySettingFormatConstraint);
     if (constraintClass == Nil) return;
 
-    MLQuickMenuVideoQualitySettingFormatConstraint *constraint = [[constraintClass alloc] init];
+    MLQuickMenuVideoQualitySettingFormatConstraint *constraint = [constraintClass alloc];
     if ([constraint respondsToSelector:@selector(initWithVideoQualitySetting:formatSelectionReason:qualityLabel:)]) {
         constraint = [constraint initWithVideoQualitySetting:3 formatSelectionReason:2 qualityLabel:closestFormat.qualityLabel];
         [activeVideo setVideoFormatConstraint:constraint];
+        NSLog(@"[KaiLiteCore] Applied %@ for %@ (%@)", closestFormat.qualityLabel,
+              self.currentVideoID, qualityKey);
     }
 }
 

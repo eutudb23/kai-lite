@@ -117,12 +117,18 @@ jq -c "$filter_expr" "$MANIFEST" | while read -r entry; do
       FINALPACKAGE=1 DEBUG=0 \
       -j"$(sysctl -n hw.ncpu)"
 
+    shopt -s nullglob
     # shellcheck disable=SC2086
     found=( $glob )
+    shopt -u nullglob
     if (( ${#found[@]} == 0 )); then
       echo "::error::No .deb produced for $name (glob=$glob)"; exit 1
     fi
-    cp "${found[0]}" "$OUT_DIR/${name}.deb"
+    latest="${found[0]}"
+    for candidate in "${found[@]:1}"; do
+      [[ "$candidate" -nt "$latest" ]] && latest="$candidate"
+    done
+    cp "$latest" "$OUT_DIR/${name}.deb"
     popd >/dev/null
     echo "::endgroup::"
     continue
@@ -139,6 +145,15 @@ jq -c "$filter_expr" "$MANIFEST" | while read -r entry; do
       git -C "$src" fetch --depth=1 origin "$ref"
       git -C "$src" checkout FETCH_HEAD
     fi
+  fi
+
+  patch_file=$(jq -r '.patch // empty' <<<"$entry")
+  if [[ -n "$patch_file" ]]; then
+    # $WORK is a generated checkout. Restore the pinned source before applying
+    # the current patch, including when a prior build used an older patch.
+    git -C "$src" reset --hard HEAD >/dev/null
+    git -C "$src" apply --check "$ROOT/$patch_file"
+    git -C "$src" apply "$ROOT/$patch_file"
   fi
 
   pushd "$src" >/dev/null

@@ -1,0 +1,243 @@
+diff --git a/Tweak/Entry.mm b/Tweak/Entry.mm
+index 2bda03f..2c8cf58 100644
+--- a/Tweak/Entry.mm
++++ b/Tweak/Entry.mm
+@@ -15,3 +15,3 @@ NSString * const YTKACEVersion = @YTKACE_VERSION_STRING;
+ static void YTKACEInstallModules(void) {
+-    YTKACEInstallSideloadCompatibilityHooks();
++    // Kai Lite already owns the sign-in and sideload compatibility path.
+     YTKACEInstallCastCompatibilityHooks();
+@@ -64,4 +64,3 @@ static void YTKACEInstallModules(void) {
+     YTKACEInstallNativeShareHooks();
+-    YTKACEInstallSettingsEntryHooks();
+-    YTKACEInstallNativeSettingsHooks();
++    // Kai Lite opens the feature pages from its existing settings section.
+ }
+diff --git a/Tweak/Features/Interface/OverlayVisibilityHooks.mm b/Tweak/Features/Interface/OverlayVisibilityHooks.mm
+index 7f22fc7..a1f86a5 100644
+--- a/Tweak/Features/Interface/OverlayVisibilityHooks.mm
++++ b/Tweak/Features/Interface/OverlayVisibilityHooks.mm
+@@ -569,6 +569,3 @@ static void YTKACEApplyOverlayBehavior(UIView *view) {
+     ]);
+-    BOOL control = [view isKindOfClass:UIControl.class] ||
+-        YTKACEOverlayTokenMatches(token, @[@"control", @"button"]);
+-    BOOL force = (YTKACEOverlayPreference(@"YTKACE.Preference.Overlay.AlwaysShowPlayPause") && playPause) ||
+-        (YTKACEOverlayPreference(@"YTKACE.Preference.Overlay.AlwaysShowControls") && control);
++    BOOL force = YTKACEOverlayPreference(@"YTKACE.Preference.Overlay.AlwaysShowPlayPause") && playPause;
+     YTKACESetOverlayForcedVisible(view, force);
+diff --git a/Tweak/Features/Interface/PostImageSaver.mm b/Tweak/Features/Interface/PostImageSaver.mm
+index 8907d53..3135dd0 100644
+--- a/Tweak/Features/Interface/PostImageSaver.mm
++++ b/Tweak/Features/Interface/PostImageSaver.mm
+@@ -224,2 +224,28 @@ static id YTKACEFindExpandableText(id node, NSUInteger depth) {
+ 
++static BOOL YTKACEIsOriginalPost(id node) {
++    return [[node description] containsString:@"id.ui.backstage.original_post"];
++}
++
++static id YTKACEPostContainerForNode(id node, NSUInteger depth) {
++    if (node == nil || depth > 8) return nil;
++    if (YTKACEIsOriginalPost(node)) return node;
++    id parents = YTKACENodeValue(node, @"supernodes");
++    if ([parents respondsToSelector:@selector(allObjects)]) parents = [parents allObjects];
++    for (id parent in parents) {
++        id found = YTKACEPostContainerForNode(parent, depth + 1);
++        if (found != nil) return found;
++    }
++    return nil;
++}
++
++static id YTKACEPostContainerForView(UIView *view) {
++    for (UIView *candidate = view; candidate != nil; candidate = candidate.superview) {
++        for (NSString *getter in @[@"keepalive_node", @"node"]) {
++            id found = YTKACEPostContainerForNode(YTKACENodeValue(candidate, getter), 0);
++            if (found != nil) return found;
++        }
++    }
++    return nil;
++}
++
+ static NSString *YTKACENodeText(id node, NSUInteger depth) {
+@@ -228,2 +254,4 @@ static NSString *YTKACENodeText(id node, NSUInteger depth) {
+     if (text.length != 0) return text;
++    text = [YTKACENodeValue(YTKACENodeValue(node, @"currentTextNode"), @"attributedText") string];
++    if (text.length != 0) return text;
+     for (id child in YTKACENodeValue(node, @"subnodes")) {
+@@ -246,5 +274,4 @@ static NSString *YTKACENodeText(id node, NSUInteger depth) {
+     UIView *window = gesture.view;
+-    UIView *cell = [window hitTest:[gesture locationInView:window] withEvent:nil];
+-    while (cell != nil && ![NSStringFromClass(cell.class) isEqualToString:@"_ASCollectionViewCell"]) cell = cell.superview;
+-    return [NSStringFromClass([YTKACENodeValue(cell, @"node") class]) isEqualToString:@"YTCommentNode"];
++    UIView *hitView = [window hitTest:[gesture locationInView:window] withEvent:nil];
++    return YTKACEPostContainerForView(hitView) != nil;
+ }
+@@ -255,16 +282,7 @@ static NSString *YTKACENodeText(id node, NSUInteger depth) {
+     CGPoint point = [gesture locationInView:window];
+-    UIView *cell = [window hitTest:point withEvent:nil];
+-    while (cell != nil && ![NSStringFromClass(cell.class) isEqualToString:@"_ASCollectionViewCell"]) cell = cell.superview;
+-    id cellNode = YTKACENodeValue(cell, @"node");
+-    if (![NSStringFromClass([cellNode class]) isEqualToString:@"YTCommentNode"]) return;
+-    id textNode = YTKACEFindExpandableText(cellNode, 0);
+-    UIView *cellView = YTKACENodeValue(cellNode, @"view");
+-    SEL boundsSel = NSSelectorFromString(@"bounds");
+-    SEL convertSel = NSSelectorFromString(@"convertRect:toNode:");
+-    if (textNode == nil || cellView == nil || ![textNode respondsToSelector:convertSel]) return;
+-    CGRect bounds = ((CGRect (*)(id, SEL))objc_msgSend)(textNode, boundsSel);
+-    CGRect frame = ((CGRect (*)(id, SEL, CGRect, id))objc_msgSend)(textNode, convertSel, bounds, cellNode);
+-    frame = [cellView convertRect:CGRectInset(frame, -8.0, -8.0) toView:window];
+-    if (!CGRectContainsPoint(frame, point)) return;
+-    NSString *text = YTKACENodeText(textNode, 0);
++    UIView *hitView = [window hitTest:point withEvent:nil];
++    id postNode = YTKACEPostContainerForView(hitView);
++    if (postNode == nil) return;
++    id textNode = YTKACEFindExpandableText(postNode, 0);
++    NSString *text = YTKACENodeText(textNode ?: postNode, 0);
+     if (text.length == 0) return;
+diff --git a/Tweak/Features/Shorts/ShortsHooks.mm b/Tweak/Features/Shorts/ShortsHooks.mm
+index 2e1888c..3ecba6b 100644
+--- a/Tweak/Features/Shorts/ShortsHooks.mm
++++ b/Tweak/Features/Shorts/ShortsHooks.mm
+@@ -12,7 +12,4 @@
+ 
+-static NSHashTable<UIView *> *YTKACEReelViews;
+ static NSMutableDictionary<NSString *, NSValue *> *YTKACEShortsOriginals;
+ static NSMutableSet<NSString *> *YTKACEShortsInstalledHooks;
+-static const void *YTKACEShortsTrackAssociation = &YTKACEShortsTrackAssociation;
+-static const void *YTKACEShortsFillAssociation = &YTKACEShortsFillAssociation;
+ static const void *YTKACEShortsSkipAssociation = &YTKACEShortsSkipAssociation;
+@@ -29,4 +26,2 @@ static const void *YTKACEShortsInitialRefreshAssociation =
+ static NSInteger const YTKACEShortsDownloadTag = 0x59544B44;
+-static double YTKACELastShortsTime;
+-static double YTKACELastShortsDuration;
+ static id YTKACELatestShortsPlayerResponse;
+@@ -619,26 +614,2 @@ static BOOL YTKACEAdvanceShort(id controller, id sender) {
+ 
+-static void YTKACEUpdateShortsProgress(void) {
+-    BOOL enabled = YTKACEFeatureEnabled(@"shortsProgress");
+-    CGFloat ratio = YTKACELastShortsDuration > 0.0
+-        ? (CGFloat)MIN(1.0, MAX(0.0, YTKACELastShortsTime / YTKACELastShortsDuration))
+-        : 0.0;
+-    for (UIView *view in YTKACEReelViews.allObjects) {
+-        CALayer *track = objc_getAssociatedObject(view, YTKACEShortsTrackAssociation);
+-        CALayer *fill = objc_getAssociatedObject(view, YTKACEShortsFillAssociation);
+-        track.hidden = !enabled;
+-        fill.hidden = !enabled;
+-        if (enabled) {
+-            CGFloat height = 3.0;
+-            track.frame = CGRectMake(0.0,
+-                                     MAX(0.0, CGRectGetHeight(view.bounds) - height),
+-                                     CGRectGetWidth(view.bounds),
+-                                     height);
+-            fill.frame = CGRectMake(0.0, 0.0,
+-                                    CGRectGetWidth(track.bounds) * ratio,
+-                                    height);
+-            YTKACEStyleProgressLayer(fill, CGRectGetWidth(track.bounds));
+-        }
+-    }
+-}
+-
+ @interface YTKACEShortsPinchTarget : NSObject <UIGestureRecognizerDelegate>
+@@ -730,21 +701,3 @@ static void YTKACEPrepareNewShortsContainer(UIView *receiver) {
+ static void YTKACEConfigureReelView(UIView *receiver, BOOL showDownload) {
+-    [YTKACEReelViews addObject:receiver];
+     YTKACEPrepareNewShortsContainer(receiver);
+-    CALayer *track = objc_getAssociatedObject(receiver, YTKACEShortsTrackAssociation);
+-    CALayer *fill = objc_getAssociatedObject(receiver, YTKACEShortsFillAssociation);
+-    if (track == nil) {
+-        track = [CALayer layer];
+-        track.backgroundColor = [UIColor colorWithWhite:0.45 alpha:0.55].CGColor;
+-        track.zPosition = 10000.0;
+-        fill = [CALayer layer];
+-        fill.backgroundColor = UIColor.redColor.CGColor;
+-        objc_setAssociatedObject(receiver, YTKACEShortsFillAssociation,
+-                                 fill, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+-        [track addSublayer:fill];
+-        [receiver.layer addSublayer:track];
+-        objc_setAssociatedObject(receiver, YTKACEShortsTrackAssociation,
+-                                 track, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+-        objc_setAssociatedObject(receiver, YTKACEShortsFillAssociation,
+-                                 fill, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+-    }
+     if (showDownload) {
+@@ -863,3 +816,2 @@ static void YTKACEConfigureReelView(UIView *receiver, BOOL showDownload) {
+     }
+-    YTKACEUpdateShortsProgress();
+ }
+@@ -987,6 +939,2 @@ static void YTKACEShortsTimeChanged(NSNotification *notification) {
+     ]);
+-    YTKACELastShortsTime = time;
+-    YTKACELastShortsDuration = duration;
+-    YTKACEUpdateShortsProgress();
+-
+     if (YTKACEShortsLimitReached()) {
+@@ -1023,4 +971,3 @@ static void YTKACEShortsTimeChanged(NSNotification *notification) {
+ void YTKACEInstallShortsHooks(void) {
+-    if (YTKACEReelViews == nil) {
+-        YTKACEReelViews = [NSHashTable weakObjectsHashTable];
++    if (YTKACEShortsOriginals == nil) {
+         YTKACEShortsOriginals = [NSMutableDictionary dictionary];
+diff --git a/Tweak/Features/SponsorBlock/SponsorHooks.mm b/Tweak/Features/SponsorBlock/SponsorHooks.mm
+index 577f03d..77de203 100644
+--- a/Tweak/Features/SponsorBlock/SponsorHooks.mm
++++ b/Tweak/Features/SponsorBlock/SponsorHooks.mm
+@@ -44,3 +44,2 @@ static void YTKACERefreshPlaybackTimePreferenceState(void) {
+     YTKACEPlaybackTimeNotificationsNeeded =
+-        YTKACEFeatureEnabled(@"shortsProgress") ||
+         YTKACEFeatureEnabled(@"autoSkipShorts") ||
+diff --git a/Tweak/Runtime/Preferences.mm b/Tweak/Runtime/Preferences.mm
+index c5d5a3d..cae699c 100644
+--- a/Tweak/Runtime/Preferences.mm
++++ b/Tweak/Runtime/Preferences.mm
+@@ -56,6 +56,6 @@ void YTKACERegisterDefaults(void) {
+         YTKACEMasterEnabledKey: @YES,
+-        YTKACENoAdsKey: @YES,
++        YTKACENoAdsKey: @NO,
+         YTKACEOLEDKey: @NO,
+         YTKACEDownloadKey: @NO,
+-        YTKACEBackgroundPlaybackKey: @YES,
++        YTKACEBackgroundPlaybackKey: @NO,
+         YTKACEPiPKey: @NO,
+@@ -120,3 +120,3 @@ void YTKACERegisterDefaults(void) {
+         @"YTKACE.Preference.Gestures.HUDPosition": @0,
+-        @"YTKACE.Preference.Tabs.Startup": @"",
++        @"YTKACE.Preference.Tabs.Startup": @"subscriptions",
+         @"YTKACE.Preference.Feed.HomeTabsHidden": @NO,
+@@ -153,6 +153,8 @@ void YTKACERegisterDefaults(void) {
+         @"YTKACE.Preference.Tabs.Hidden.Playlists": @YES,
+-        @"YTKACE.Preference.Tabs.Hidden.History": @YES,
++        @"YTKACE.Preference.Tabs.Hidden.History": @NO,
+         @"YTKACE.Preference.Tabs.Hidden.Notifs": @YES,
+         @"YTKACE.Preference.Tabs.Hidden.WatchLater": @YES,
+-        @"YTKACE.Preference.Tabs.Order": @[@"home", @"shorts", @"subscriptions", @"library", @"ytkace"]
++        @"YTKACE.Preference.Tabs.Hidden.YTKACETab": @YES,
++        @"YTKACE.Preference.Tabs.LabelsHidden": @YES,
++        @"YTKACE.Preference.Tabs.Order": @[@"home", @"shorts", @"subscriptions", @"library", @"history"]
+     }];
+diff --git a/Tweak/Settings/YTKACESettingsPages.mm b/Tweak/Settings/YTKACESettingsPages.mm
+index f7f4926..e835593 100644
+--- a/Tweak/Settings/YTKACESettingsPages.mm
++++ b/Tweak/Settings/YTKACESettingsPages.mm
+@@ -1702,3 +1702,5 @@ static NSDictionary *YTKACEFeedDefinition(void) {
+         @[
+-            YTKACEToggle(@"Remove Shorts Shelves", @"YTKACE.Preference.Shorts.FeedHidden", @"", @""),
++            YTKACEToggleDetail(@"Remove Shorts Shelves",
++                @"Hides horizontal Shorts rows in feeds. The Shorts tab stays visible.",
++                @"YTKACE.Preference.Shorts.FeedHidden"),
+             YTKACEToggleDetail(@"Keep Shorts in Home",
+@@ -1763,3 +1765,2 @@ static NSDictionary *YTKACEShortsOptionsDefinition(void) {
+         @[
+-            YTKACEToggleDetail(@"Shorts Progress Bar", @"Show a thin progress line at the bottom of Shorts.", @"shortsProgress"),
+             YTKACEToggle(@"Auto-Scroll to Next Short", @"autoSkipShorts", @"", @""),
+@@ -1895,4 +1896,2 @@ static NSDictionary *YTKACEGeneralDefinition(void) {
+                 @"YTKACE.Preference.Posts.SaveImage"),
+-            YTKACEToggleDetail(@"Hold to Copy Text", @"Hold a post or comment to copy its text.",
+-                               @"YTKACE.Preference.Posts.CopyText"),
+             YTKACEToggleDetail(@"Mini Player for Kids Videos",
+@@ -1975,3 +1974,6 @@ static NSDictionary *YTKACEDownloadsDefinition(void) {
+                 @"YTKACE.Preference.Downloads.Method",
+-                @[@"SABR", @"TV Client", @"Direct"], @[@0, @2, @1], 0)
++                @[@"SABR", @"TV Client", @"Direct"], @[@0, @2, @1], 0),
++            YTKACEToggleDetail(@"Hold to Copy Post Text",
++                @"Hold a community post to copy its text. Hold a comment to copy it without a setting.",
++                @"YTKACE.Preference.Posts.CopyText")
+         ],
