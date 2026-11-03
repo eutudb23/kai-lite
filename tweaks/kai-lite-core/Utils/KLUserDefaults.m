@@ -98,7 +98,6 @@ static NSString *const kSuiteName = @"com.kai-lite.core";
         // ---- Shorts ----
         @"shortsOnlyMode":          @NO,
         @"limitShorts":             @NO,
-        @"shortsEnableProgress":    @NO,
         @"shortsSpeedUp":           @NO,
         @"pinchToFullscreen":       @NO,
         @"shortsToRegular":         @NO,

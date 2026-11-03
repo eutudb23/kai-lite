@@ -261,7 +261,6 @@
             NSArray <YTSettingsSectionItem *> *rows = @[
                 [self kl_switchWithTitle:@"ShortsOnlyMode"       key:@"shortsOnlyMode"],
                 [self kl_switchWithTitle:@"LimitShorts"          key:@"limitShorts"],
-                [self kl_switchWithTitle:@"ShortsEnableProgress" key:@"shortsEnableProgress"],
                 [self kl_switchWithTitle:@"ShortsSpeedUp"        key:@"shortsSpeedUp"],
                 [self kl_switchWithTitle:@"PinchToFullscreen"    key:@"pinchToFullscreen"],
                 [self kl_switchWithTitle:@"ShortsToRegular"      key:@"shortsToRegular"],

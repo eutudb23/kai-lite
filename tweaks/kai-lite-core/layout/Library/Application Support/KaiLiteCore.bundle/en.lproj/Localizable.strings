@@ -138,8 +138,6 @@
 "ShortsOnlyModeDesc"      = "Limits YouTube functionality to viewing Shorts only.";
 "LimitShorts"             = "Limit Shorts";
 "LimitShortsDesc"         = "Limits the number of Shorts in the feed to 10-15.";
-"ShortsEnableProgress"    = "Enable progress bar";
-"ShortsEnableProgressDesc"= "Displays progress bar in the Shorts overlay.";
 "ShortsSpeedUp"           = "Increase Shorts playback rate";
 "ShortsSpeedUpDesc"       = "Allows to speed up playback by long pressing on a certain part of the screen.";
 "PinchToFullscreen"       = "Pinch to Fullscreen";
