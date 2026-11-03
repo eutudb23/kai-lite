@@ -72,6 +72,7 @@ tweaks.json           # Single source of truth for tweak repos + refs
 - **Silent deps**: enabling `YTABConfig` automatically builds + injects `YouGroupSettings` (its runtime dependency) — no user-facing toggle needed.
 - **Cache key** includes the enabled list — different toggle combinations get different caches.
 - **v2 source** is a pinned, locally patched MIT-licensed YTKACE build. The patch lives in `patches/ytkace-kai-lite.patch` and the license is in `licenses/YTKACE-LICENSE`. Kai Lite's own tab editor remains available when `enable_ytkace` is off. The v2 runtime features need device validation against each target YouTube version.
+- **v2 bottom-bar default** is Home, Shorts, Subscriptions, You, History, with labels hidden and Subscriptions selected on startup. The YTKACE tab starts hidden. Changes made in the tab editor remain saved across updates.
 - **Quality** stays in Kai Lite's Player settings with separate Wi-Fi and mobile choices. `Default` leaves YouTube's choice alone. v2 leaves YouQuality off by default so it does not compete with those choices; it remains available as an opt-in build toggle.
 - **YTSideload** is pulled from its GitHub Release rather than built from source.
 - **`concurrency: cancel-in-progress`** kills superseded runs to save macOS minutes.

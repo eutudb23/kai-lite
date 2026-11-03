@@ -22,7 +22,7 @@ index 2bda03f..2c8cf58 100644
  
  __attribute__((constructor))
 diff --git a/Tweak/Runtime/Preferences.mm b/Tweak/Runtime/Preferences.mm
-index c5d5a3d..fd429ea 100644
+index c5d5a3d..cae699c 100644
 --- a/Tweak/Runtime/Preferences.mm
 +++ b/Tweak/Runtime/Preferences.mm
 @@ -54,10 +54,10 @@ void YTKACERegisterDefaults(void) {
@@ -38,3 +38,27 @@ index c5d5a3d..fd429ea 100644
          YTKACEPiPKey: @NO,
          YTKACESpeedKey: @NO,
          YTKACELoopKey: @NO,
+@@ -118,7 +118,7 @@ void YTKACERegisterDefaults(void) {
+         @"YTKACE.Preference.Gestures.HUDEnabled": @YES,
+         @"YTKACE.Preference.Gestures.HUDSize": @1,
+         @"YTKACE.Preference.Gestures.HUDPosition": @0,
+-        @"YTKACE.Preference.Tabs.Startup": @"",
++        @"YTKACE.Preference.Tabs.Startup": @"subscriptions",
+         @"YTKACE.Preference.Feed.HomeTabsHidden": @NO,
+         @"YTKACE.Preference.Shorts.LimitEnabled": @NO,
+         @"YTKACE.Preference.Shorts.FeedHidden": @NO,
+@@ -151,10 +151,12 @@ void YTKACERegisterDefaults(void) {
+         @"YTKACE.Preference.Tabs.Hidden.Learning": @YES,
+         @"YTKACE.Preference.Tabs.Hidden.Fashion": @YES,
+         @"YTKACE.Preference.Tabs.Hidden.Playlists": @YES,
+-        @"YTKACE.Preference.Tabs.Hidden.History": @YES,
++        @"YTKACE.Preference.Tabs.Hidden.History": @NO,
+         @"YTKACE.Preference.Tabs.Hidden.Notifs": @YES,
+         @"YTKACE.Preference.Tabs.Hidden.WatchLater": @YES,
+-        @"YTKACE.Preference.Tabs.Order": @[@"home", @"shorts", @"subscriptions", @"library", @"ytkace"]
++        @"YTKACE.Preference.Tabs.Hidden.YTKACETab": @YES,
++        @"YTKACE.Preference.Tabs.LabelsHidden": @YES,
++        @"YTKACE.Preference.Tabs.Order": @[@"home", @"shorts", @"subscriptions", @"library", @"history"]
+     }];
+     if (!hasPlacement && [legacyDownloadButton boolValue]) {
+         [YTKACEDefaults() setInteger:1
