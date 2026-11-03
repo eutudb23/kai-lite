@@ -45,6 +45,7 @@ file "$SRC_IPA" | grep -qiE 'zip archive|ios app' || {
 
 # 2. Resolve selected artifacts. build_all_tweaks.sh renames every output to
 #    <Name>.<ext> so we can match by exact name across .deb / .dylib / .appex.
+unzip -Z1 "$SRC_IPA" > "$WORK/source-entries.txt"
 declare -a DEB_ARGS=()
 while IFS= read -r name; do
   [[ -z "$name" ]] && continue
@@ -59,6 +60,12 @@ while IFS= read -r name; do
     echo "::error::No artifact at $DEB_DIR/${name}.{deb,dylib,appex,bundle}"
     ls "$DEB_DIR"
     exit 1
+  fi
+  if [[ "$hit" == *.deb || "$hit" == *.dylib ]]; then
+    if grep -Fq "/${name}.dylib" "$WORK/source-entries.txt"; then
+      echo "::error::Source IPA already contains ${name}.dylib; injecting it again can make the app crash at launch. Use an IPA without this tweak."
+      exit 1
+    fi
   fi
   DEB_ARGS+=( "$hit" )
 done <<<"$ENABLED_TWEAKS"
