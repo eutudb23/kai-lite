@@ -214,19 +214,26 @@ index c5d5a3d..cae699c 100644
 +        @"YTKACE.Preference.Tabs.Order": @[@"home", @"shorts", @"subscriptions", @"library", @"history"]
      }];
 diff --git a/Tweak/Settings/YTKACESettingsPages.mm b/Tweak/Settings/YTKACESettingsPages.mm
-index f7f4926..a6145a3 100644
+index f7f4926..e835593 100644
 --- a/Tweak/Settings/YTKACESettingsPages.mm
 +++ b/Tweak/Settings/YTKACESettingsPages.mm
-@@ -1763,3 +1763,2 @@ static NSDictionary *YTKACEShortsOptionsDefinition(void) {
+@@ -1702,3 +1702,5 @@ static NSDictionary *YTKACEFeedDefinition(void) {
+         @[
+-            YTKACEToggle(@"Remove Shorts Shelves", @"YTKACE.Preference.Shorts.FeedHidden", @"", @""),
++            YTKACEToggleDetail(@"Remove Shorts Shelves",
++                @"Hides horizontal Shorts rows in feeds. The Shorts tab stays visible.",
++                @"YTKACE.Preference.Shorts.FeedHidden"),
+             YTKACEToggleDetail(@"Keep Shorts in Home",
+@@ -1763,3 +1765,2 @@ static NSDictionary *YTKACEShortsOptionsDefinition(void) {
          @[
 -            YTKACEToggleDetail(@"Shorts Progress Bar", @"Show a thin progress line at the bottom of Shorts.", @"shortsProgress"),
              YTKACEToggle(@"Auto-Scroll to Next Short", @"autoSkipShorts", @"", @""),
-@@ -1895,4 +1894,2 @@ static NSDictionary *YTKACEGeneralDefinition(void) {
+@@ -1895,4 +1896,2 @@ static NSDictionary *YTKACEGeneralDefinition(void) {
                  @"YTKACE.Preference.Posts.SaveImage"),
 -            YTKACEToggleDetail(@"Hold to Copy Text", @"Hold a post or comment to copy its text.",
 -                               @"YTKACE.Preference.Posts.CopyText"),
              YTKACEToggleDetail(@"Mini Player for Kids Videos",
-@@ -1975,3 +1972,6 @@ static NSDictionary *YTKACEDownloadsDefinition(void) {
+@@ -1975,3 +1974,6 @@ static NSDictionary *YTKACEDownloadsDefinition(void) {
                  @"YTKACE.Preference.Downloads.Method",
 -                @[@"SABR", @"TV Client", @"Direct"], @[@0, @2, @1], 0)
 +                @[@"SABR", @"TV Client", @"Direct"], @[@0, @2, @1], 0),
