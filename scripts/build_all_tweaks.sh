@@ -143,12 +143,11 @@ jq -c "$filter_expr" "$MANIFEST" | while read -r entry; do
 
   patch_file=$(jq -r '.patch // empty' <<<"$entry")
   if [[ -n "$patch_file" ]]; then
-    if git -C "$src" apply --reverse --check "$ROOT/$patch_file" >/dev/null 2>&1; then
-      echo "Patch already applied: $patch_file"
-    else
-      git -C "$src" apply --check "$ROOT/$patch_file"
-      git -C "$src" apply "$ROOT/$patch_file"
-    fi
+    # $WORK is a generated checkout. Restore the pinned source before applying
+    # the current patch, including when a prior build used an older patch.
+    git -C "$src" reset --hard HEAD >/dev/null
+    git -C "$src" apply --check "$ROOT/$patch_file"
+    git -C "$src" apply "$ROOT/$patch_file"
   fi
 
   pushd "$src" >/dev/null
