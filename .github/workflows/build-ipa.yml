@@ -38,7 +38,7 @@ on:
       enable_youpip:
         description: "YouPiP (PiP)"
         type: boolean
-        default: true
+        default: false
       enable_ytuhd:
         description: "YTUHD (4K unlock)"
         type: boolean
